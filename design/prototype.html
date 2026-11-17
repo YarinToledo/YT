@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#090d13">
+<title>TradePilot | Institutional Trading</title>
+<style>
+:root{
+ --bg:#090d13;--panel:#101720;--panel2:#141e29;--line:#25313d;
+ --text:#edf1f5;--muted:#8794a2;--gold:#c9aa70;--green:#55c69a;
+ --red:#e27676;--blue:#7ba7d8;--radius:15px;
+}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select{font:inherit}button{cursor:pointer}
+.app{min-height:100vh;display:grid;grid-template-columns:245px 1fr}
+.sidebar{background:#0c1219;border-right:1px solid var(--line);padding:26px 17px;display:flex;flex-direction:column;gap:30px}
+.brand{display:flex;align-items:center;gap:11px;padding:0 10px}.brand-mark{width:35px;height:35px;border:1px solid #8d754e;border-radius:10px;display:grid;place-items:center;color:var(--gold);font-weight:800;font-size:17px}.brand-name{font-size:17px;font-weight:750;letter-spacing:1.7px}.brand-sub{font-size:9px;letter-spacing:2px;color:var(--muted)}
+.nav-label{font-size:10px;color:#687685;letter-spacing:1.6px;padding:0 12px;margin-bottom:8px}.nav{display:grid;gap:5px}.nav button{border:0;background:transparent;color:#9ba7b3;text-align:left;padding:11px 12px;border-radius:9px;display:flex;gap:12px;align-items:center}.nav button.active,.nav button:hover{background:#1b2631;color:#f3e6ce}.nav .ico{width:18px;text-align:center;color:var(--gold)}
+.side-bottom{margin-top:auto;border-top:1px solid var(--line);padding:18px 10px 0;color:var(--muted);font-size:11px}
+main{min-width:0;padding:28px 34px 40px;max-width:1600px;width:100%;margin:auto}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:30px}.eyebrow{color:var(--gold);font-size:10px;letter-spacing:2px;text-transform:uppercase}.page-title{font-size:25px;font-weight:650;letter-spacing:-.6px;margin:4px 0 0}.top-actions{display:flex;align-items:center;gap:12px}.market-status{color:var(--muted);font-size:11px}.live-dot{display:inline-block;width:7px;height:7px;background:var(--green);border-radius:50%;margin-right:7px;box-shadow:0 0 10px #55c69a66}.avatar{width:35px;height:35px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;color:var(--gold);font-size:11px}
+.grid{display:grid;gap:15px}.metrics{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:17px}.card{background:linear-gradient(145deg,#121b25,#0f161f);border:1px solid var(--line);border-radius:var(--radius);padding:19px;min-width:0}.metric-label{color:var(--muted);font-size:11px;letter-spacing:.6px}.metric-value{font-size:26px;font-weight:650;letter-spacing:-.7px;margin:8px 0 4px}.positive{color:var(--green)}.negative{color:var(--red)}.metric-foot{font-size:11px;color:var(--muted)}.main-grid{grid-template-columns:minmax(0,1.65fr) minmax(280px,.85fr);margin-bottom:16px}.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.card-title{font-size:13px;font-weight:650;letter-spacing:.3px}.subtle{color:var(--muted);font-size:11px}.chart-wrap{height:230px;position:relative}.chart-wrap svg{width:100%;height:100%;overflow:visible}.chart-grid{stroke:#26323e;stroke-width:1;stroke-dasharray:3 5}.chart-line{fill:none;stroke:var(--gold);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}.chart-area{fill:url(#area)}.chart-labels{display:flex;justify-content:space-between;color:#697785;font-size:10px;margin-top:7px}
+.risk-list{display:grid;gap:17px}.risk-row{display:flex;justify-content:space-between;gap:10px;font-size:12px}.risk-row span:first-child{color:var(--muted)}.progress{height:5px;background:#26313c;border-radius:5px;margin-top:8px;overflow:hidden}.progress i{display:block;height:100%;background:var(--gold);border-radius:5px}.risk-note{margin-top:18px;padding:11px 12px;border:1px solid #66563866;background:#c9aa7010;border-radius:9px;color:#cbb58e;font-size:11px}
+.table-card{padding:0;overflow:hidden}.table-card .card-head{padding:19px 20px 0}.table-scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;white-space:nowrap}th,td{text-align:left;padding:13px 20px;border-top:1px solid #202b36;font-size:11px}th{color:#788695;font-weight:500;font-size:10px;letter-spacing:.7px;text-transform:uppercase}td{color:#d8dfe6}.ticker{font-weight:700;letter-spacing:.4px}.company{display:block;color:#758291;font-size:10px;font-weight:400}.pill{display:inline-block;border-radius:30px;padding:4px 8px;background:#1c2a31;color:var(--green);font-size:10px}.pill.closed{background:#2b2424;color:var(--red)}
+.bottom-grid{grid-template-columns:1fr 1fr;margin-top:16px}.activity{display:grid;gap:14px}.activity-item{display:flex;justify-content:space-between;align-items:center;font-size:11px}.activity-item span:first-child{color:#cbd3db}.activity-item small{display:block;color:var(--muted);margin-top:3px}.activity-val{text-align:right;font-weight:650}
+.btn{border:1px solid #8f7956;background:#c9aa70;color:#111820;padding:9px 14px;border-radius:8px;font-size:11px;font-weight:700}.btn.secondary{background:transparent;color:#d9c49f;border-color:#49515b}.btn:hover{filter:brightness(1.08)}
+.trade-form{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.field label{display:block;color:var(--muted);font-size:10px;margin-bottom:6px}.field input,.field select{width:100%;background:#0b1219;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;outline:none}.field input:focus,.field select:focus{border-color:var(--gold)}.form-result{grid-column:1/-1;border:1px solid var(--line);border-radius:9px;padding:12px;color:var(--muted);font-size:11px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.hidden{display:none!important}
+.mobile-menu{display:none;background:transparent;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 10px}
+@media(max-width:1050px){.app{grid-template-columns:205px 1fr}.metrics{grid-template-columns:repeat(2,1fr)}main{padding:24px 20px}}
+@media(max-width:760px){.app{display:block}.sidebar{display:none;position:fixed;z-index:5;inset:0 auto 0 0;width:260px;box-shadow:20px 0 60px #0009}.sidebar.open{display:flex}.mobile-menu{display:inline-block}.topbar{gap:12px}.topbar-left{display:flex;align-items:center;gap:12px}.market-status{display:none}main{padding:20px 14px}.main-grid,.bottom-grid{grid-template-columns:1fr}.metrics{gap:9px}.card{padding:15px}.metric-value{font-size:22px}.trade-form{grid-template-columns:1fr 1fr}.page-title{font-size:21px}}
+@media(max-width:420px){.metrics{grid-template-columns:1fr 1fr}.trade-form{grid-template-columns:1fr}.avatar{display:none}.metric-value{font-size:19px}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar" id="sidebar">
+  <div class="brand"><div class="brand-mark">T</div><div><div class="brand-name">TRADEPILOT</div><div class="brand-sub">INSTITUTIONAL TRADING</div></div></div>
+  <div><div class="nav-label">WORKSPACE</div><nav class="nav">
+    <button class="active" data-page="Overview"><span class="ico">◫</span> Overview</button>
+    <button data-page="Open Positions"><span class="ico">▤</span> Open Positions</button>
+    <button data-page="Trade Journal"><span class="ico">▧</span> Trade Journal</button>
+    <button data-page="Market Watch"><span class="ico">⌁</span> Market Watch</button>
+  </nav></div>
+  <div><div class="nav-label">MANAGEMENT</div><nav class="nav">
+    <button data-page="Risk Management"><span class="ico">◈</span> Risk Management</button>
+    <button data-page="Analytics"><span class="ico">▥</span> Analytics</button>
+    <button data-page="Settings"><span class="ico">⚙</span> Settings</button>
+  </nav></div>
+  <div class="side-bottom">PERSONAL TRADING TERMINAL<br><span style="color:#53616e">VERSION 0.1 · DESIGN PREVIEW</span></div>
+</aside>
+<main>
+  <header class="topbar">
+    <div class="topbar-left"><button class="mobile-menu" id="menuBtn">☰</button><div><div class="eyebrow">PORTFOLIO / OVERVIEW</div><h1 class="page-title" id="pageTitle">Portfolio Overview</h1></div></div>
+    <div class="top-actions"><div class="market-status"><span class="live-dot"></span>MARKET STATUS · DEMO DATA</div><div class="avatar">YT</div></div>
+  </header>
+  <section class="grid metrics">
+    <article class="card"><div class="metric-label">PORTFOLIO EQUITY</div><div class="metric-value" id="equity">$1,000.00</div><div class="metric-foot">Starting capital</div></article>
+    <article class="card"><div class="metric-label">TOTAL P&L</div><div class="metric-value positive" id="pnl">+$0.00</div><div class="metric-foot">0.00% return</div></article>
+    <article class="card"><div class="metric-label">WIN RATE</div><div class="metric-value" id="winrate">—</div><div class="metric-foot">Closed trades</div></article>
+    <article class="card"><div class="metric-label">OPEN POSITIONS</div><div class="metric-value" id="openCount">02</div><div class="metric-foot">Maximum 2 positions</div></article>
+  </section>
+  <section class="grid main-grid">
+    <article class="card">
+      <div class="card-head"><div><div class="card-title">EQUITY PERFORMANCE</div><div class="subtle">Illustrative portfolio curve</div></div><span class="subtle">30D</span></div>
+      <div class="chart-wrap"><svg viewBox="0 0 700 230" preserveAspectRatio="none" aria-label="Illustrative equity chart">
+        <defs><linearGradient id="area" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#c9aa70" stop-opacity=".24"/><stop offset="100%" stop-color="#c9aa70" stop-opacity="0"/></linearGradient></defs>
+        <path class="chart-grid" d="M0 35H700 M0 90H700 M0 145H700 M0 200H700"/>
+        <path class="chart-area" d="M0 178 C45 170 55 150 100 157 S165 130 205 143 S260 110 305 124 S365 94 405 111 S465 72 510 91 S570 65 610 78 S660 40 700 48 L700 210 L0 210Z"/>
+        <path class="chart-line" d="M0 178 C45 170 55 150 100 157 S165 130 205 143 S260 110 305 124 S365 94 405 111 S465 72 510 91 S570 65 610 78 S660 40 700 48"/>
+      </svg></div><div class="chart-labels"><span>OCT 19</span><span>OCT 26</span><span>NOV 02</span><span>NOV 09</span><span>NOV 17</span></div>
+    </article>
+    <article class="card">
+      <div class="card-head"><div class="card-title">RISK CONTROL</div><span class="subtle">Configured limits</span></div>
+      <div class="risk-list">
+        <div><div class="risk-row"><span>Risk per trade</span><b>1.5% · $15.00</b></div><div class="progress"><i style="width:30%"></i></div></div>
+        <div><div class="risk-row"><span>Daily loss limit</span><b>3.0% · $30.00</b></div><div class="progress"><i style="width:0%"></i></div></div>
+        <div><div class="risk-row"><span>Weekly loss limit</span><b>6.0% · $60.00</b></div><div class="progress"><i style="width:0%"></i></div></div>
+        <div><div class="risk-row"><span>Risk / reward minimum</span><b>1 : 3</b></div><div class="progress"><i style="width:75%"></i></div></div>
+      </div>
+      <div class="risk-note">Risk limits are displayed for planning. This preview does not enforce live trading restrictions.</div>
+    </article>
+  </section>
+  <section class="card table-card">
+    <div class="card-head"><div><div class="card-title">OPEN POSITIONS</div><div class="subtle">Sample data · not connected to a broker</div></div><button class="btn" id="newTradeBtn">＋ New trade</button></div>
+    <div class="table-scroll"><table><thead><tr><th>Instrument</th><th>Direction</th><th>Entry</th><th>Stop loss</th><th>Take profit</th><th>Risk</th><th>Status</th></tr></thead>
+    <tbody id="positionsBody">
+      <tr><td><span class="ticker">NVDA</span><span class="company">NVIDIA Corporation</span></td><td>LONG</td><td>$—</td><td>—</td><td>—</td><td>$15.00</td><td><span class="pill">PLANNED</span></td></tr>
+      <tr><td><span class="ticker">PLTR</span><span class="company">Palantir Technologies</span></td><td>LONG</td><td>$—</td><td>—</td><td>—</td><td>$15.00</td><td><span class="pill">PLANNED</span></td></tr>
+    </tbody></table></div>
+  </section>
+  <section class="grid bottom-grid">
+    <article class="card" id="tradePanel">
+      <div class="card-head"><div><div class="card-title">TRADE PLANNER</div><div class="subtle">Position sizing calculator</div></div><span class="subtle">RISK-BASED</span></div>
+      <div class="trade-form">
+        <div class="field"><label>SYMBOL</label><input id="symbol" value="NVDA" maxlength="10"></div>
+        <div class="field"><label>DIRECTION</label><select id="direction"><option>LONG</option><option>SHORT</option></select></div>
+        <div class="field"><label>ENTRY PRICE ($)</label><input id="entry" type="number" min="0.01" step=".01" value="100"></div>
+        <div class="field"><label>STOP LOSS ($)</label><input id="stop" type="number" min="0.01" step=".01" value="98"></div>
+        <div class="field"><label>TARGET PRICE ($)</label><input id="target" type="number" min="0.01" step=".01" value="106"></div>
+        <div class="field" style="display:flex;align-items:end"><button class="btn" style="width:100%" id="calcBtn">Calculate size</button></div>
+        <div class="form-result" id="calcResult"><span>Position size: <b>7.5 shares</b></span><span>Risk: <b>$15.00</b></span><span>R:R <b>1:3</b></span></div>
+      </div>
+    </article>
+    <article class="card"><div class="card-head"><div class="card-title">RECENT ACTIVITY</div><span class="subtle">LATEST</span></div>
+      <div class="activity"><div class="activity-item"><div>Portfolio initialized<small>Starting balance · $1,000.00</small></div><div class="activity-val">—</div></div><div class="activity-item"><div>Risk framework configured<small>1.5% per trade · 1:3 minimum R:R</small></div><div class="activity-val positive">READY</div></div><div class="activity-item"><div>Market data connection<small>No provider connected</small></div><div class="activity-val">PENDING</div></div></div>
+    </article>
+  </section>
+</main>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+document.querySelectorAll('.nav button').forEach(btn=>btn.addEventListener('click',()=>{
+ document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+ $('pageTitle').textContent=btn.dataset.page==='Overview'?'Portfolio Overview':btn.dataset.page;
+ document.querySelector('.eyebrow').textContent='TRADEPILOT / '+btn.dataset.page.toUpperCase();
+ $('sidebar').classList.remove('open');
+}));
+$('menuBtn').addEventListener('click',()=>$('sidebar').classList.toggle('open'));
+$('newTradeBtn').addEventListener('click',()=>$('tradePanel').scrollIntoView({behavior:'smooth',block:'center'}));
+$('calcBtn').addEventListener('click',()=>{
+ const entry=Number($('entry').value),stop=Number($('stop').value),target=Number($('target').value);
+ const dir=$('direction').value,dist=Math.abs(entry-stop),reward=dir==='LONG'?target-entry:entry-target;
+ if(!entry||!stop||!target||dist<=0||reward<=0||(dir==='LONG'&&stop>=entry)||(dir==='SHORT'&&stop<=entry)){
+  $('calcResult').textContent='Check your prices: stop and target must be on the correct side of entry.';return;
+ }
+ const risk=1000*.015,shares=risk/dist,rr=reward/dist;
+ $('calcResult').innerHTML=`<span>Position size: <b>${shares.toFixed(3)} shares</b></span><span>Risk: <b>$${risk.toFixed(2)}</b></span><span>R:R <b>1:${rr.toFixed(2)}</b></span>`;
+});
+</script>
+</body>
+</html>
