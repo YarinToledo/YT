@@ -23,6 +23,22 @@ from orb import Bar, OrbFilters, evaluate_orb, top_signals, track
 ET = ZoneInfo("America/New_York")
 log = logging.getLogger("worker")
 
+
+def _load_dotenv(path: str = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")) -> None:
+    """Local runs: read KEY=VALUE lines from .env (Docker passes the variables itself)."""
+    if not os.path.exists(path):
+        return
+    with open(path) as fh:
+        for line in fh:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, v = line.split("=", 1)
+            os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+
+
+_load_dotenv()
+
 IB_HOST = os.environ.get("IB_HOST", "ib-gateway")
 IB_PORT = int(os.environ.get("IB_PORT", "4004"))  # 4004 = paper via the gnzsnz/ib-gateway image, 4003 = live
 CLIENT_ID = int(os.environ.get("IB_CLIENT_ID", "17"))

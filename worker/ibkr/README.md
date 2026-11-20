@@ -23,6 +23,15 @@ It never places orders.
    docker compose logs -f worker          # expect "connected to IB Gateway" and "pushed 1 rows (heartbeat)"
    ```
 
+## Running on a Mac instead (no server)
+
+1. Install Python 3.12 from python.org.
+2. Open TWS (or IB Gateway) and log in with the **paper** username. In TWS: File → Global Configuration → API → Settings:
+   tick *Enable ActiveX and Socket Clients* and *Read-Only API*, socket port **7497**, *Allow connections from localhost only*.
+3. `cp .env.example .env`, fill in the Supabase values and `INGEST_SECRET`, and uncomment `IB_HOST=127.0.0.1`, `IB_PORT=7497`.
+   The TWS login itself is not needed in `.env` when you log in to TWS by hand.
+4. `./run-local.sh` — keep it running (and the Mac awake) during US market hours.
+
 ## Schedule (New York time)
 
 | When | What |
