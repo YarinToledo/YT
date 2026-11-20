@@ -273,6 +273,21 @@ const HE: Record<string, string> = {
   'Single-user app. Create your login in Supabase → Authentication → Users.': 'אפליקציה למשתמש יחיד. יוצרים משתמש ב-Supabase ← Authentication ← Users.',
 
 
+  'Reward : risk (1:X)': 'יחס סיכוי:סיכון (1:X)',
+  'Manual target': 'יעד ידני',
+  'Target is calculated from this ratio': 'היעד מחושב לפי היחס הזה',
+  'Empty = enter target manually': 'ריק = מזינים יעד ידנית',
+  'Risk per trade must be between 0 and 100%.': 'הסיכון לעסקה חייב להיות בין 0 ל-100%.',
+  'Risk {p}% is above your default {d}% for this trade.': 'סיכון {p}% בעסקה הזו גבוה מברירת המחדל שלך ({d}%).',
+
+  'Prices are not available in demo mode': 'מחירים לא זמינים במצב דמו',
+  'Could not load prices: {msg}': 'טעינת המחירים נכשלה: {msg}',
+  'Prices from Financial Modeling Prep · updated {d}': 'מחירים מ-Financial Modeling Prep · עודכן ב-{d}',
+  'Loading prices…': 'טוען מחירים…',
+  'Refreshing…': 'מרענן…',
+  'Refresh prices': 'רענן מחירים',
+  'Today': 'היום',
+
   // Stock analysis
   'Stock Analysis': 'ניתוח מניה',
   'Analyze': 'נתח',

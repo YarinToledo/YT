@@ -130,3 +130,15 @@ export async function fetchMarketData(symbol: string): Promise<MarketData> {
   if (!data || data.error) throw new Error(data?.error ?? 'Empty response')
   return normalize(data)
 }
+
+export interface Quote { symbol: string; price: number | null; change: number | null; changePct: number | null; error?: string }
+
+/** Latest price and daily % change for a list of symbols. */
+export async function fetchQuotes(symbols: string[]): Promise<Record<string, Quote>> {
+  if (isDemo || !supabase || symbols.length === 0) return {}
+  const { data, error } = await supabase.functions.invoke<{ quotes?: Quote[]; error?: string }>('market-data', { body: { symbols } })
+  if (error) throw new Error(error.message)
+  if (!data?.quotes) throw new Error(data?.error ?? 'Empty response')
+  const toNum = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : null)
+  return Object.fromEntries(data.quotes.map(q => [q.symbol, { ...q, price: toNum(q.price), change: toNum(q.change), changePct: toNum(q.changePct) }]))
+}

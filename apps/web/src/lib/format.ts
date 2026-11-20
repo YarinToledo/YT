@@ -36,3 +36,5 @@ export const compact = (n: number | null | undefined) => {
   return getLang() === 'he' ? `⁦${v}${s}⁩` : `${v}${s}`
 }
 export const num2 = (n: number | null | undefined, digits = 2) => (n == null || !isFinite(n) ? '—' : n.toFixed(digits))
+export const signedPct = (n: number | null | undefined, digits = 2) =>
+  n == null || !isFinite(n) ? '—' : ltr(`${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n * 100).toFixed(digits)}%`)

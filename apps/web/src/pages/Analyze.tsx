@@ -4,7 +4,7 @@ import { useT, type T } from '../lib/i18n'
 import { useStore } from '../lib/store'
 import { fetchMarketData, type Fundamentals, type MarketData } from '../lib/market'
 import { longScenario, sma, technicals, type Bar, type Bias, type Technicals } from '../lib/indicators'
-import { compact, money, num2, pct, ratio, shortDate, tone } from '../lib/format'
+import { compact, money, num2, pct, signedPct, ratio, shortDate, tone } from '../lib/format'
 import { normalizeSymbol } from '../lib/validate'
 
 const SYMBOL_RE = /^[A-Z0-9.\-]{1,12}$/
@@ -207,7 +207,7 @@ export default function Analyze() {
               </div>
               <div className="stock-price">
                 <div className="metric-value">{money(price)}</div>
-                {p?.changePct != null && <div className={tone(p.changePct)}>{pct(p.changePct / 100, 2)}</div>}
+                {p?.changePct != null && <div className={tone(p.changePct)}>{signedPct(p.changePct / 100)}</div>}
               </div>
             </div>
             <div className="perf-row" style={{ marginTop: 14 }}>

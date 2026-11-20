@@ -32,6 +32,32 @@ Deno.serve(async (req: Request) => {
   if (!key) return json({ error: 'FMP_API_KEY secret is not set in Supabase' }, 500)
 
   const body = await req.json().catch(() => ({}))
+
+  // Quotes mode: { symbols: [...] } → latest price and daily change for each (used by the watchlist).
+  if (Array.isArray(body?.symbols)) {
+    const symbols = [...new Set((body.symbols as unknown[]).map(x => String(x).trim().toUpperCase()))]
+      .filter(x => /^[A-Z0-9.\-]{1,12}$/.test(x))
+      .slice(0, 30)
+    const quotes = await Promise.all(symbols.map(async sym => {
+      try {
+        const r = await fetch(`${FMP}/quote?symbol=${encodeURIComponent(sym)}&apikey=${key}`)
+        const d = await r.json().catch(() => null)
+        const q = Array.isArray(d) ? d[0] : null
+        if (!r.ok || !q) return { symbol: sym, error: String(r.status) }
+        return {
+          symbol: sym,
+          price: q.price ?? null,
+          change: q.change ?? null,
+          changePct: q.changePercentage ?? q.changesPercentage ?? null,
+          timestamp: q.timestamp ?? null,
+        }
+      } catch (e) {
+        return { symbol: sym, error: String((e as Error).message ?? e) }
+      }
+    }))
+    return json({ quotes, fetchedAt: new Date().toISOString() })
+  }
+
   const symbol = String(body?.symbol ?? '').trim().toUpperCase()
   if (!/^[A-Z0-9.\-]{1,12}$/.test(symbol)) return json({ error: 'Invalid symbol' }, 400)
 
