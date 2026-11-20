@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TradePilot – יומן מסחר ומתכנן סיכונים</title>
+<meta name="description" content="TradePilot: יומן מסחר אישי, מתכנן סיכונים, ניתוח מניות בעזרת AI, סורק מניות חמות ואותות חיים מ-IBKR.">
+<link rel="icon" href="logo-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#090d13;--panel:#101720;--panel2:#141e29;--line:#25313d;--text:#edf1f5;--muted:#8794a2;--gold:#c9aa70;--gold2:#e6cf9f;--green:#55c69a;--red:#e27676}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 Heebo,system-ui,sans-serif}
+a{color:inherit}
+.wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+.ltr{direction:ltr;unicode-bidi:isolate}
+
+header{position:sticky;top:0;z-index:5;background:#090d13e6;backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;justify-content:space-between;height:68px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+.brand img{width:38px;height:38px}
+.brand b{font-size:17px;letter-spacing:1.6px}
+.nav{display:flex;gap:26px;font-size:14px;color:var(--muted)}
+.nav a{text-decoration:none}.nav a:hover{color:var(--text)}
+.btn{display:inline-block;padding:12px 22px;border-radius:11px;font-weight:700;text-decoration:none;font-size:15px;border:1px solid transparent;transition:transform .15s}
+.btn:hover{transform:translateY(-1px)}
+.btn.gold{background:linear-gradient(135deg,var(--gold2),var(--gold));color:#141006}
+.btn.ghost{border-color:var(--line);color:var(--text)}
+.btn.sm{padding:8px 16px;font-size:14px}
+
+.hero{padding:88px 0 70px;background:radial-gradient(900px 420px at 80% -10%,#c9aa7022,transparent 70%)}
+.hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center}
+.eyebrow{color:var(--gold);font-size:13px;letter-spacing:2px;font-weight:700}
+h1{font-size:clamp(34px,5vw,54px);line-height:1.12;margin:14px 0 18px;font-weight:800}
+h1 em{font-style:normal;color:var(--gold)}
+.lead{color:var(--muted);font-size:18px;max-width:540px}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+
+.mock{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 30px 80px #0008}
+.mock h4{margin:0 0 14px;font-size:13px;color:var(--muted);font-weight:500}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.metric{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.metric span{font-size:12px;color:var(--muted)}
+.metric b{display:block;font-size:24px;font-weight:800}
+.pos{color:var(--green)}.neg{color:var(--red)}
+.row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:14px}
+.tick{font-weight:700;letter-spacing:.5px}
+.pill{font-size:11px;padding:2px 9px;border-radius:99px;border:1px solid}
+.pill.open{color:var(--green);border-color:#55c69a66}
+.pill.plan{color:#e0b25a;border-color:#e0b25a66}
+.meter{height:7px;background:var(--panel2);border-radius:9px;overflow:hidden;margin-top:6px}
+.meter i{display:block;height:100%;width:42%;background:var(--green);border-radius:9px}
+
+section{padding:76px 0}
+.sec-head{text-align:center;max-width:640px;margin:0 auto 44px}
+h2{font-size:clamp(28px,3.6vw,38px);margin:10px 0 12px;font-weight:800}
+.sec-head p{color:var(--muted);margin:0}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px}
+.card .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:#c9aa7018;color:var(--gold);margin-bottom:14px}
+.card h3{margin:0 0 8px;font-size:19px}
+.card p{margin:0;color:var(--muted);font-size:15px}
+
+.steps{counter-reset:s;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.step{position:relative;padding:24px;border-inline-start:2px solid var(--gold);background:linear-gradient(90deg,transparent,#c9aa700c)}
+.step:before{counter-increment:s;content:counter(s);font-size:40px;font-weight:800;color:#c9aa7055;display:block;line-height:1}
+.step h3{margin:8px 0 6px}.step p{margin:0;color:var(--muted)}
+
+.safe{background:var(--panel);border-block:1px solid var(--line)}
+.safe-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.safe-item b{display:block;color:var(--gold);margin-bottom:4px}
+.safe-item p{margin:0;color:var(--muted);font-size:15px}
+
+.final{text-align:center}
+.final .box{background:radial-gradient(600px 240px at 50% 0,#c9aa7026,transparent 70%),var(--panel);border:1px solid var(--line);border-radius:22px;padding:56px 24px}
+footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-size:13px}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+@media (max-width:900px){
+  .hero-grid,.grid,.steps{grid-template-columns:1fr}
+  .safe-grid{grid-template-columns:1fr 1fr}
+  .nav{display:none}
+  .hero{padding:56px 0 48px}
+}
+@media (max-width:520px){.safe-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="#top"><img src="logo-mark.png" alt="" width="38" height="38"><b class="ltr">TRADEPILOT</b></a>
+    <nav class="nav">
+      <a href="#features">יכולות</a>
+      <a href="#how">איך זה עובד</a>
+      <a href="#safety">בטיחות</a>
+    </nav>
+    <a class="btn gold sm app-link" href="#app">כניסה לאפליקציה</a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow">יומן מסחר · ניהול סיכונים · ניתוח AI</div>
+        <h1>לסחור לפי תוכנית,<br><em>לא לפי תחושה.</em></h1>
+        <p class="lead">TradePilot מרכז את כל מה שסוחר צריך במקום אחד: מתכנן עסקה שמחשב גודל פוזיציה לפי אחוז הסיכון ויחס הסיכון/סיכוי שלך, יומן מסחר, ניתוח מניות טכני ופונדמנטלי עם המלצת AI, וסורק מניות חמות.</p>
+        <div class="cta">
+          <a class="btn gold app-link" href="#app">פתח את TradePilot</a>
+          <a class="btn ghost" href="#features">מה יש בפנים</a>
+        </div>
+      </div>
+      <div class="mock" aria-hidden="true">
+        <h4>סקירה · היום</h4>
+        <div class="metrics">
+          <div class="metric"><span>הון</span><b class="ltr">$25,480</b></div>
+          <div class="metric"><span>רווח/הפסד יומי</span><b class="pos ltr">+$312</b></div>
+        </div>
+        <div class="row"><span class="tick ltr">NVDA</span><span class="ltr">2.4R</span><span class="pill open">פתוחה</span></div>
+        <div class="row"><span class="tick ltr">AMD</span><span class="ltr">1:2</span><span class="pill plan">מתוכננת</span></div>
+        <div class="row"><span class="tick ltr">PLTR</span><span class="neg ltr">-0.6R</span><span class="pill open">פתוחה</span></div>
+        <div class="row" style="display:block"><span style="color:var(--muted);font-size:13px">ניצול תקציב סיכון יומי · 42%</span><div class="meter"><i></i></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow">יכולות</div>
+        <h2>כל הכלים, מסך אחד</h2>
+        <p>נבנה לסוחר יחיד שרוצה משמעת: לתכנן לפני, לתעד אחרי, וללמוד מהנתונים.</p>
+      </div>
+      <div class="grid">
+        <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.6-3.4 8.2-8 9-4.6-.8-8-4.4-8-9V6zM12 8v5M12 16h.01"/></svg></div><h3>מתכנן עסקה וסיכון</h3><p>קובעים אחוז סיכון ויחס סיכון/סיכוי, והמערכת מחשבת כמות, יעד ומגבלות יומיות ושבועיות.</p></div>
+        <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h10l3 3v15H6zM9 9h7M9 13h7M9 17h4"/></svg></div><h3>יומן מסחר</h3><p>כל עסקה נשמרת עם כניסה, סטופ, יעד ותוצאה ב-R, כדי לראות מה באמת עובד.</p></div>
+        <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15zM21 21l-5.2-5.2M7 12l2.2-2.4 2 1.8L14 8"/></svg></div><h3>ניתוח מניה עם AI</h3><p>ממוצעים נעים, RSI, MACD, תמיכה והתנגדות, נתונים פונדמנטליים, סקירת העסק ומניות קשורות, והמלצה מנומקת.</p></div>
+        <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c-4 0-7-2.8-7-6.6 0-3.6 2.9-5.5 3.6-9.4 2.1 1.4 3.4 3.4 3.6 5.6 1-.8 1.6-2 1.7-3.3 2.5 2 4.1 4.6 4.1 7.3 0 3.6-2.6 6.4-6 6.4z"/></svg></div><h3>מניות חמות</h3><p>סורק מומנטום לפי נפח יחסי, סגירה חזקה ומגמה, עם תוכנית כניסה מוכנה לפי היחס שלך ודירוג AI.</p></div>
+        <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg></div><h3>אותות חיים מ-IBKR</h3><p>פריצת טווח פתיחה (ORB) על מניות בתנועה, ותמונת מצב של המניות החמות בזמן המסחר.</p></div>
+        <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 9 9h-9zM15 3.5A9 9 0 0 1 20.5 9H15z"/></svg></div><h3>אנליטיקה</h3><p>עקומת הון, אחוז הצלחה, R ממוצע ותוצאות לפי סטאפ, בעברית ובאנגלית.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow">איך זה עובד</div>
+        <h2>שלושה צעדים לכל עסקה</h2>
+      </div>
+      <div class="steps">
+        <div class="step"><h3>מאתרים</h3><p>הסורק והאותות החיים מציפים מניות בתנועה; ניתוח ה-AI בודק אם יש סטאפ.</p></div>
+        <div class="step"><h3>מתכננים</h3><p>כניסה, סטופ ויעד לפי היחס שלך. הכמות נגזרת מאחוז הסיכון, לא מהבטן.</p></div>
+        <div class="step"><h3>מתעדים ולומדים</h3><p>סוגרים את העסקה ביומן ורואים בנתונים איזה סטאפ באמת מרוויח.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="safety" class="safe">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow">בטיחות</div>
+        <h2>כלי עזר, לא טייס אוטומטי</h2>
+      </div>
+      <div class="safe-grid">
+        <div class="safe-item"><b>קריאה בלבד</b><p>החיבור ל-IBKR הוא לקריאת נתונים. המערכת לא שולחת פקודות.</p></div>
+        <div class="safe-item"><b>אתה מחליט</b><p>ה-AI מציע ומנמק. ההחלטה והביצוע נשארים אצלך.</p></div>
+        <div class="safe-item"><b>מגבלות סיכון</b><p>אזהרה כשעוברים את תקציב הסיכון היומי או השבועי.</p></div>
+        <div class="safe-item"><b>נתונים פרטיים</b><p>חשבון אישי עם הרשאות לפי משתמש.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="final">
+    <div class="wrap">
+      <div class="box">
+        <h2>מוכן לעסקה הבאה?</h2>
+        <p style="color:var(--muted);margin:0 0 24px">תכנן אותה לפני שאתה לוחץ על קנייה.</p>
+        <a class="btn gold app-link" href="#app">פתח את TradePilot</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 <span class="ltr">TradePilot</span></span>
+    <span>המידע באתר ובאפליקציה אינו ייעוץ השקעות. מסחר בשוק ההון כרוך בסיכון.</span>
+  </div>
+</footer>
+
+</body>
+</html>

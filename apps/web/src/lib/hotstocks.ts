@@ -14,6 +14,7 @@ export interface ScanFilters {
   minChangePct: number // signal-day change, e.g. 0.01 = +1%
   maxExtension: number // max distance above the 20-day average, e.g. 0.25 = 25%
   requireUptrend: boolean // above 50- and 200-day averages
+  hideLeveraged: boolean // drop leveraged/inverse ETFs (they mirror another stock's move)
 }
 
 export const DEFAULT_FILTERS: ScanFilters = {
@@ -24,6 +25,7 @@ export const DEFAULT_FILTERS: ScanFilters = {
   minChangePct: 0.01,
   maxExtension: 0.25,
   requireUptrend: true,
+  hideLeveraged: false,
 }
 
 export interface Check { key: string; pass: boolean; value: string }

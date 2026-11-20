@@ -5,6 +5,7 @@ import { isDemo, supabase } from '../lib/data'
 import { compact, money, qty, rMult, signedPct, times } from '../lib/format'
 import { useT } from '../lib/i18n'
 import { useStore } from '../lib/store'
+import { detectLeverage, leverageLabel } from '../lib/leveraged'
 
 interface Row { id: number; kind: 'orb' | 'hot_snapshot' | 'heartbeat'; trading_day: string; symbol: string | null; payload: Record<string, any>; created_at: string }
 
@@ -76,7 +77,7 @@ export default function LiveSignals() {
                 return (
                   <tr key={r.id}>
                     <td>{p.rank}</td>
-                    <td><Link to={`/analyze?s=${r.symbol}`} className="ticker">{r.symbol}</Link></td>
+                    <td><Link to={`/analyze?s=${r.symbol}`} className="ticker">{r.symbol}</Link>{(() => { const l = detectLeverage(r.symbol ?? ''); return l ? <span className="lev-tag">{t('{f} on {u}', { f: leverageLabel(l), u: l.underlying })}</span> : null })()}</td>
                     <td className="num">{times(p.rel_volume)}</td>
                     <td className="num">{money(p.entry)}</td>
                     <td className="num negative">{money(p.stop)}</td>
@@ -106,7 +107,7 @@ export default function LiveSignals() {
             <tbody>
               {snap.payload.items.map((x: any) => (
                 <tr key={x.symbol}>
-                  <td><span className="ticker">{x.symbol}</span></td>
+                  <td><span className="ticker">{x.symbol}</span>{(() => { const l = detectLeverage(x.symbol); return l ? <span className="lev-tag">{t('{f} on {u}', { f: leverageLabel(l), u: l.underlying })}</span> : null })()}</td>
                   <td className="num">{money(x.last)}</td>
                   <td className={`num ${x.change_pct > 0 ? 'positive' : x.change_pct < 0 ? 'negative' : ''}`}>{x.change_pct == null ? '—' : signedPct(x.change_pct / 100)}</td>
                   <td className="num">{compact(x.volume)}</td>

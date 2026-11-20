@@ -7,6 +7,9 @@ import { useT } from '../lib/i18n'
 import { fetchRanking, fetchScan, type RankResult, type ScanRaw } from '../lib/market'
 import { useStore } from '../lib/store'
 import LiveSignals from '../components/LiveSignals'
+import MiniChart from '../components/MiniChart'
+import { detectLeverage, leverageLabel } from '../lib/leveraged'
+import type { Bar } from '../lib/indicators'
 
 const FILTERS_KEY = 'tradepilot-hot-filters'
 const SCAN_KEY = 'tradepilot-hot-scan'
@@ -35,14 +38,22 @@ export default function HotStocks() {
   const [showRejected, setShowRejected] = useState(false)
   const rr = settings.min_reward_risk > 0 ? settings.min_reward_risk : 2
 
+  const barsBySymbol = useMemo(() => {
+    const m = new Map<string, Bar[]>()
+    for (const c of scan?.candidates ?? []) if (c.bars && c.bars.length > 0) m.set(c.symbol, toBars(c.bars))
+    return m
+  }, [scan])
+  const names = useMemo(() => new Map((scan?.candidates ?? []).map(c => [c.symbol, c.name])), [scan])
   const evaluated = useMemo(() => {
     if (!scan) return [] as Candidate[]
     return scan.candidates
-      .filter(c => c.bars && c.bars.length > 0)
-      .map(c => evaluate(c.symbol, c.name, c.source, toBars(c.bars!), filters, rr))
+      .filter(c => barsBySymbol.has(c.symbol))
+      .filter(c => !(filters.hideLeveraged && detectLeverage(c.symbol, c.name)))
+      .map(c => evaluate(c.symbol, c.name, c.source, barsBySymbol.get(c.symbol)!, filters, rr))
       .filter((c): c is Candidate => c != null)
       .sort((a, b) => Number(b.pass) - Number(a.pass) || b.score - a.score)
-  }, [scan, filters, rr])
+  }, [scan, barsBySymbol, filters, rr])
+  const leveragedCount = useMemo(() => (scan?.candidates ?? []).filter(c => detectLeverage(c.symbol, c.name)).length, [scan])
   const passed = evaluated.filter(c => c.pass)
   const rejected = evaluated.filter(c => !c.pass)
   const picks = new Map((rank?.ranking.picks ?? []).map(p => [p.symbol, p]))
@@ -120,10 +131,12 @@ export default function HotStocks() {
               </div>
             ))}
             <label className="check"><input type="checkbox" checked={filters.requireUptrend} onChange={e => setFilter('requireUptrend', e.target.checked)} /> {t('Require uptrend (above 50- and 200-day)')}</label>
+            <label className="check"><input type="checkbox" checked={filters.hideLeveraged} onChange={e => setFilter('hideLeveraged', e.target.checked)} /> {t('Hide leveraged and inverse ETFs')}</label>
             <div className="form-actions"><button type="button" className="btn secondary" onClick={() => { setFilters(DEFAULT_FILTERS); save(FILTERS_KEY, DEFAULT_FILTERS) }}>{t('Reset to defaults')}</button></div>
           </div>
         </details>
         {scan && <div className="subtle" style={{ marginTop: 10 }}>{t('Last scan {d} · {n} stocks checked · {p} passed', { d: new Date(scan.fetchedAt).toLocaleString(), n: evaluated.length, p: passed.length })}</div>}
+        {scan && filters.hideLeveraged && leveragedCount > 0 && <div className="subtle">{t('{n} leveraged ETFs hidden', { n: leveragedCount })}</div>}
         {scan && Object.keys(scan.errors).length > 0 && <div className="subtle">{t('Some data was unavailable: {list}', { list: Object.entries(scan.errors).map(([k, v]) => `${k} (${v})`).join(', ') })}</div>}
       </article>
 
@@ -143,6 +156,9 @@ export default function HotStocks() {
             <div className="hot-list">
               {ordered.map(c => {
                 const ai = picks.get(c.symbol)
+                const lev = detectLeverage(c.symbol, c.name)
+                const levBase = lev && evaluated.find(x => x.symbol === lev.underlying)
+                const levKids = evaluated.filter(x => x.symbol !== c.symbol && detectLeverage(x.symbol, names.get(x.symbol))?.underlying === c.symbol)
                 const sized = c.plan ? planPosition({ direction: 'LONG', entry: c.plan.entry, stop: c.plan.stop, target: c.plan.target, equity: usage.equity, riskPct: settings.risk_per_trade_pct, fractional: settings.fractional_shares }) : null
                 return (
                   <div className="hot-item" key={c.symbol}>
@@ -151,6 +167,7 @@ export default function HotStocks() {
                         {ai && <span className="hot-rank">#{ai.rank}</span>}
                         <span className="ticker">{c.symbol}</span>
                         {c.name && <span className="company">{c.name}</span>}
+                        {lev && <span className="lev-tag" title={t('Leveraged ETF')}>{t('{f} on {u}', { f: leverageLabel(lev), u: lev.underlying })}</span>}
                       </div>
                       <div className="hot-price">
                         <b>{money(c.price)}</b>
@@ -166,6 +183,15 @@ export default function HotStocks() {
                       <span>{t('From 52w high')} <b>{signedPct(-c.fromHigh52, 1)}</b></span>
                       <span>{t('Score')} <b>{c.score}</b></span>
                     </div>
+                    {lev && (
+                      <div className="lev-note">
+                        {lev.factor < 0 ? t('Inverse ETF: it rises when {u} falls.', { u: lev.underlying }) + ' ' : ''}
+                        {t('Leveraged ETF: it moves about {f} of {u} each day and resets daily, so it loses value when held through choppy days. Suited to short holds; trade the underlying for longer swings.', { f: leverageLabel(lev), u: lev.underlying })}
+                        {levBase && ' ' + t('{u} itself is also in this scan, so this is the same move twice.', { u: lev.underlying })}
+                      </div>
+                    )}
+                    {levKids.length > 0 && <div className="lev-note">{t('Also in this scan as a leveraged ETF: {list}', { list: levKids.map(x => x.symbol).join(', ') })}</div>}
+                    {barsBySymbol.has(c.symbol) && <MiniChart bars={barsBySymbol.get(c.symbol)!} plan={c.plan} />}
                     {ai && (
                       <div className="hot-ai">
                         <div><b>{t('Why it moved:')}</b> {ai.why_moving}</div>
@@ -216,7 +242,7 @@ export default function HotStocks() {
                     const fail = c.checks.find(x => !x.pass)!
                     return (
                       <tr key={c.symbol}>
-                        <td><Link to={`/analyze?s=${c.symbol}`} className="ticker">{c.symbol}</Link></td>
+                        <td><Link to={`/analyze?s=${c.symbol}`} className="ticker">{c.symbol}</Link>{(() => { const l = detectLeverage(c.symbol, c.name); return l ? <span className="lev-tag">{t('{f} on {u}', { f: leverageLabel(l), u: l.underlying })}</span> : null })()}</td>
                         <td className="num">{money(c.price)}</td>
                         <td className={`num ${c.changePct >= 0 ? 'positive' : 'negative'}`}>{signedPct(c.changePct)}</td>
                         <td className="num">{times(c.relVolume)}</td>
