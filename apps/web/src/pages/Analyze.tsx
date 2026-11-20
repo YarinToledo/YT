@@ -2,7 +2,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useT, type T } from '../lib/i18n'
 import { useStore } from '../lib/store'
-import { fetchMarketData, type Fundamentals, type MarketData } from '../lib/market'
+import { explainDataErrors, fetchMarketData, type Fundamentals, type MarketData } from '../lib/market'
 import { planPosition } from '../lib/calc'
 import { longScenario, sma, technicals, type Bar, type Bias, type Technicals } from '../lib/indicators'
 import { compact, qty, money, num2, pct, signedPct, ratio, shortDate, tone } from '../lib/format'
@@ -224,6 +224,9 @@ export default function Analyze() {
       {state.error && <div className="risk-note danger">{t('Could not analyze {s}: {msg}', { s: current ?? '', msg: t(state.error) })}</div>}
       {state.loading && <div className="subtle">{t('Loading market data…')}</div>}
 
+      {data && data.bars.length === 0 && Object.keys(data.errors).length > 0 && (
+        <div className="risk-note danger">{t('No market data for {s}: {msg}', { s: data.symbol, msg: t(explainDataErrors(data.errors) ?? '') })}</div>
+      )}
       {data && (
         <>
           <article className="card">
@@ -314,7 +317,7 @@ export default function Analyze() {
           </section>
 
           {Object.keys(data.errors).length > 0 && (
-            <div className="subtle">{t('Some data was unavailable: {list}', { list: Object.keys(data.errors).join(', ') })}</div>
+            <div className="subtle">{t('Some data was unavailable: {list}', { list: Object.keys(data.errors).join(', ') })} · {t(explainDataErrors(data.errors) ?? '')}</div>
           )}
           <div className="subtle">{t('Data as of {d}', { d: new Date(data.fetchedAt).toLocaleString() })}</div>
         </>

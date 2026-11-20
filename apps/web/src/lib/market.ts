@@ -195,3 +195,19 @@ async function invoke<T>(body: Record<string, unknown>): Promise<T> {
 export const fetchScan = (extra: string[]) => invoke<ScanRaw>({ scan: { extra } })
 /** Claude ranks the candidates that passed the strategy rules. Costs a few cents. */
 export const fetchRanking = (candidates: unknown, trader: unknown) => invoke<RankResult>({ rank: { candidates, trader } })
+
+/**
+ * Turns FMP failures into one plain explanation. Returns null when nothing failed.
+ * FMP answers 429 "Limit Reach" when the daily quota is used up (free plan: 250 requests/day),
+ * 401 for a bad key, and 402/403 for endpoints the plan doesn't include.
+ */
+export function explainDataErrors(errors: Record<string, string>): string | null {
+  const msgs = Object.values(errors)
+  if (msgs.length === 0) return null
+  const all = msgs.join(' | ')
+  if (/\b429\b|limit reach/i.test(all)) return 'FMP daily request limit reached (free plan: 250 requests a day). It resets at midnight New York time; until then market data is unavailable.'
+  if (/\b401\b|invalid api key/i.test(all)) return 'FMP rejected the API key. Check the FMP_API_KEY secret in Supabase.'
+  if (/\b40[23]\b|premium|exclusive|subscription/i.test(all)) return 'This data is not included in the FMP free plan.'
+  return msgs[0]
+}
+
