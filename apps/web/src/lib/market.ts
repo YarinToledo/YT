@@ -119,29 +119,83 @@ export function normalize(raw: MarketRaw): MarketData {
   return { symbol: raw.symbol, fetchedAt: raw.fetchedAt, profile, bars, fundamentals, years, peers, errors }
 }
 
-export async function fetchMarketData(symbol: string): Promise<MarketData> {
+// ---------------------------------------------------------------- local cache
+// The free FMP plan allows 250 requests a day: one analysis costs 6, so results are kept in the browser.
+const MD_PREFIX = 'tradepilot-md-'
+const MD_TTL = 6 * 3600_000 // daily bars and fundamentals barely change within a session
+const MD_KEEP = 20
+const Q_KEY = 'tradepilot-quotes'
+const Q_TTL = 10 * 60_000
+
+function readCache<T>(key: string): { at: number; value: T } | null {
+  try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : null } catch { return null }
+}
+function writeCache(key: string, value: unknown) {
+  try { localStorage.setItem(key, JSON.stringify({ at: Date.now(), value })) } catch { pruneMarketCache(0); try { localStorage.setItem(key, JSON.stringify({ at: Date.now(), value })) } catch { /* storage full */ } }
+}
+/** Keeps only the `keep` most recent analyses. */
+function pruneMarketCache(keep = MD_KEEP) {
+  try {
+    const items: { k: string; at: number }[] = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)
+      if (k?.startsWith(MD_PREFIX)) items.push({ k, at: readCache(k)?.at ?? 0 })
+    }
+    items.sort((a, b) => b.at - a.at).slice(keep).forEach(x => localStorage.removeItem(x.k))
+  } catch { /* storage blocked */ }
+}
+
+export interface CacheInfo { cached: boolean; stale: boolean; at: number }
+
+/**
+ * Market data for one symbol. Served from the browser cache for 6 hours unless `force`.
+ * When FMP fails (e.g. the daily limit), an older cached copy is returned and marked stale.
+ */
+export async function fetchMarketData(symbol: string, force = false): Promise<MarketData & { cache: CacheInfo }> {
+  const key = MD_PREFIX + symbol
+  const hit = readCache<MarketRaw>(key)
+  if (hit && !force && Date.now() - hit.at < MD_TTL) return { ...normalize(hit.value), cache: { cached: true, stale: false, at: hit.at } }
   if (isDemo || !supabase) throw new Error('Stock analysis needs the Supabase connection (it is not available in demo mode).')
   const { data, error } = await supabase.functions.invoke<MarketRaw & { error?: string }>('market-data', { body: { symbol } })
   if (error) {
     // Try to surface the function's own error message
     let msg = error.message
     try { const body = await (error as { context?: Response }).context?.json(); if (body?.error) msg = body.error } catch { /* ignore */ }
+    if (hit) return { ...normalize(hit.value), cache: { cached: true, stale: true, at: hit.at } }
     throw new Error(msg)
   }
-  if (!data || data.error) throw new Error(data?.error ?? 'Empty response')
-  return normalize(data)
+  if (!data || data.error) {
+    if (hit) return { ...normalize(hit.value), cache: { cached: true, stale: true, at: hit.at } }
+    throw new Error(data?.error ?? 'Empty response')
+  }
+  const fresh = normalize(data)
+  if (fresh.bars.length === 0 && hit) return { ...normalize(hit.value), cache: { cached: true, stale: true, at: hit.at } }
+  if (fresh.bars.length > 0) { writeCache(key, data); pruneMarketCache() }
+  return { ...fresh, cache: { cached: false, stale: false, at: Date.now() } }
 }
 
 export interface Quote { symbol: string; price: number | null; change: number | null; changePct: number | null; error?: string }
 
 /** Latest price and daily % change for a list of symbols. */
-export async function fetchQuotes(symbols: string[]): Promise<Record<string, Quote>> {
+export async function fetchQuotes(symbols: string[], force = false): Promise<Record<string, Quote>> {
   if (isDemo || !supabase || symbols.length === 0) return {}
-  const { data, error } = await supabase.functions.invoke<{ quotes?: Quote[]; error?: string }>('market-data', { body: { symbols } })
-  if (error) throw new Error(error.message)
-  if (!data?.quotes) throw new Error(data?.error ?? 'Empty response')
-  const toNum = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : null)
-  return Object.fromEntries(data.quotes.map(q => [q.symbol, { ...q, price: toNum(q.price), change: toNum(q.change), changePct: toNum(q.changePct) }]))
+  const cache = readCache<Record<string, Quote & { at: number }>>(Q_KEY)?.value ?? {}
+  const now = Date.now()
+  const need = force ? symbols : symbols.filter(s => !cache[s] || now - cache[s].at > Q_TTL || cache[s].price == null)
+  if (need.length > 0) {
+    const { data, error } = await supabase.functions.invoke<{ quotes?: Quote[]; error?: string }>('market-data', { body: { symbols: need } })
+    if (error) throw new Error(error.message)
+    if (!data?.quotes) throw new Error(data?.error ?? 'Empty response')
+    const toNum = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : null)
+    for (const q of data.quotes) {
+      const price = toNum(q.price)
+      // Keep the last good price when FMP fails for a symbol (e.g. daily limit reached).
+      if (price == null && cache[q.symbol]?.price != null) continue
+      cache[q.symbol] = { ...q, price, change: toNum(q.change), changePct: toNum(q.changePct), at: now }
+    }
+    writeCache(Q_KEY, cache)
+  }
+  return Object.fromEntries(symbols.filter(s => cache[s]).map(s => [s, cache[s]]))
 }
 
 export interface AiAnalysis {

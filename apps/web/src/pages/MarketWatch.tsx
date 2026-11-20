@@ -19,11 +19,11 @@ export default function MarketWatch() {
   const symbolsKey = watchlist.map(w => w.symbol).join(',')
 
   // Prices load when the page opens and on demand (the free FMP plan allows 250 requests a day).
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (force = false) => {
     if (isDemo || !symbolsKey) return
     setQuoteState(q => ({ ...q, loading: true, error: null }))
     try {
-      setQuotes(await fetchQuotes(symbolsKey.split(',')))
+      setQuotes(await fetchQuotes(symbolsKey.split(','), force))
       setQuoteState({ loading: false, error: null, at: new Date() })
     } catch (e) {
       setQuoteState(q => ({ ...q, loading: false, error: (e as Error).message }))
@@ -55,7 +55,7 @@ export default function MarketWatch() {
                 : t('Loading prices…')}
             </div>
           </div>
-          {!isDemo && watchlist.length > 0 && <button className="btn sm secondary" disabled={quoteState.loading} onClick={refresh}>{quoteState.loading ? t('Refreshing…') : t('Refresh prices')}</button>}
+          {!isDemo && watchlist.length > 0 && <button className="btn sm secondary" disabled={quoteState.loading} onClick={() => refresh(true)}>{quoteState.loading ? t('Refreshing…') : t('Refresh prices')}</button>}
         </div>
         {watchlist.length === 0 ? (
           <div className="empty" style={{ marginTop: 18 }}>{t('Your watchlist is empty.')}</div>

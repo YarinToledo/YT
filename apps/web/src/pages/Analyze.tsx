@@ -2,7 +2,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useT, type T } from '../lib/i18n'
 import { useStore } from '../lib/store'
-import { explainDataErrors, fetchMarketData, type Fundamentals, type MarketData } from '../lib/market'
+import { explainDataErrors, fetchMarketData, type CacheInfo, type Fundamentals, type MarketData } from '../lib/market'
 import { planPosition } from '../lib/calc'
 import { longScenario, sma, technicals, type Bar, type Bias, type Technicals } from '../lib/indicators'
 import { compact, qty, money, num2, pct, signedPct, ratio, shortDate, tone } from '../lib/format'
@@ -155,18 +155,22 @@ export default function Analyze() {
   const [params, setParams] = useSearchParams()
   const current = params.get('s')
   const [input, setInput] = useState(current ?? '')
-  const [state, setState] = useState<{ loading: boolean; error: string | null; data: MarketData | null }>({ loading: false, error: null, data: null })
+  const [state, setState] = useState<{ loading: boolean; error: string | null; data: (MarketData & { cache?: CacheInfo }) | null }>({ loading: false, error: null, data: null })
 
+  // A refresh press forces a new fetch for that symbol only (switching symbols uses the cache).
+  const [reload, setReload] = useState<{ s: string; n: number } | null>(null)
+  const force = reload != null && reload.s === current
   useEffect(() => {
     if (!current) return
     setInput(current)
     let alive = true
-    setState({ loading: true, error: null, data: null })
-    fetchMarketData(current)
+    setState(s => ({ loading: true, error: null, data: force ? s.data : null }))
+    fetchMarketData(current, force)
       .then(data => alive && setState({ loading: false, error: null, data }))
       .catch(e => alive && setState({ loading: false, error: (e as Error).message, data: null }))
     return () => { alive = false }
-  }, [current])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current, reload])
 
   function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -224,6 +228,9 @@ export default function Analyze() {
       {state.error && <div className="risk-note danger">{t('Could not analyze {s}: {msg}', { s: current ?? '', msg: t(state.error) })}</div>}
       {state.loading && <div className="subtle">{t('Loading market data…')}</div>}
 
+      {data?.cache?.stale && (
+        <div className="risk-note">{t('FMP is not answering right now (usually the daily limit), so this is the saved analysis from {d}.', { d: new Date(data.cache.at).toLocaleString() })}</div>
+      )}
       {data && data.bars.length === 0 && Object.keys(data.errors).length > 0 && (
         <div className="risk-note danger">{t('No market data for {s}: {msg}', { s: data.symbol, msg: t(explainDataErrors(data.errors) ?? '') })}</div>
       )}
@@ -319,7 +326,11 @@ export default function Analyze() {
           {Object.keys(data.errors).length > 0 && (
             <div className="subtle">{t('Some data was unavailable: {list}', { list: Object.keys(data.errors).join(', ') })} · {t(explainDataErrors(data.errors) ?? '')}</div>
           )}
-          <div className="subtle">{t('Data as of {d}', { d: new Date(data.fetchedAt).toLocaleString() })}</div>
+          <div className="subtle">
+            {t('Data as of {d}', { d: new Date(data.fetchedAt).toLocaleString() })}
+            {data.cache?.cached && !data.cache.stale && ' · ' + t('saved copy, refreshes after 6 hours')}
+            {' '}<button type="button" className="btn sm secondary" disabled={state.loading} onClick={() => setReload(r => ({ s: data.symbol, n: (r?.n ?? 0) + 1 }))}>{t('Refresh data')}</button>
+          </div>
         </>
       )}
     </div>
