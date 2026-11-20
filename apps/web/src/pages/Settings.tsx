@@ -1,4 +1,5 @@
 import { useStore } from '../lib/store'
+import { useT } from '../lib/i18n'
 import { isDemo, resetDemo, supabase } from '../lib/data'
 import { tradePnl } from '../lib/calc'
 import type { Trade } from '../lib/types'
@@ -23,38 +24,39 @@ export function downloadTradesCsv(trades: Trade[]) {
 
 export default function Settings({ email }: { email: string | null }) {
   const { settings, trades, saveSettings } = useStore()
+  const t = useT()
   return (
     <section className="grid two-col">
       <div className="stack">
         <article className="card">
-          <div className="card-head"><div><div className="card-title">Account</div><div className="subtle">Equity = starting capital + realized P&amp;L</div></div></div>
+          <div className="card-head"><div><div className="card-title">{t('Account')}</div><div className="subtle">{t('Equity = starting capital + realized P&L')}</div></div></div>
           <SettingsFields fields={[{ key: 'starting_capital', label: 'Starting capital ($)', min: 0, hint: 'Change this if you deposit or withdraw.' }]} />
           <label className="check" style={{ marginTop: 16 }}>
             <input type="checkbox" checked={settings.fractional_shares} onChange={e => saveSettings({ ...settings, fractional_shares: e.target.checked }).catch(() => {})} />
-            Allow fractional shares in position sizing
+            {t('Allow fractional shares in position sizing')}
           </label>
         </article>
         <article className="card">
-          <div className="card-head"><div className="card-title">Data</div></div>
+          <div className="card-head"><div className="card-title">{t('Data')}</div></div>
           <div className="btn-row">
-            <button className="btn secondary" onClick={() => downloadTradesCsv(trades)}>Export trades (CSV)</button>
-            {isDemo && <button className="btn danger" onClick={() => { if (confirm('Erase all demo data in this browser and restore the sample trades?')) { resetDemo(); location.reload() } }}>Reset demo data</button>}
+            <button className="btn secondary" onClick={() => downloadTradesCsv(trades)}>{t('Export trades (CSV)')}</button>
+            {isDemo && <button className="btn danger" onClick={() => { if (confirm(t('Erase all demo data in this browser and restore the sample trades?'))) { resetDemo(); location.reload() } }}>{t('Reset demo data')}</button>}
           </div>
         </article>
       </div>
       <article className="card">
-        <div className="card-head"><div className="card-title">Session</div></div>
+        <div className="card-head"><div className="card-title">{t('Session')}</div></div>
         <dl className="kv">
-          <dt>Mode</dt><dd>{isDemo ? 'Demo · browser storage' : 'Supabase'}</dd>
-          <dt>Signed in as</dt><dd>{email ?? '—'}</dd>
-          <dt>Trades stored</dt><dd>{trades.length}</dd>
-          <dt>Market data</dt><dd>Not connected</dd>
-          <dt>Broker</dt><dd>Not connected</dd>
+          <dt>{t('Mode')}</dt><dd>{isDemo ? t('Demo · browser storage') : 'Supabase'}</dd>
+          <dt>{t('Signed in as')}</dt><dd>{email ?? '—'}</dd>
+          <dt>{t('Trades stored')}</dt><dd>{trades.length}</dd>
+          <dt>{t('Market data')}</dt><dd>{t('Not connected')}</dd>
+          <dt>{t('Broker')}</dt><dd>{t('Not connected')}</dd>
         </dl>
         {isDemo ? (
-          <div className="risk-note">Demo mode stores data only in this browser. Add your Supabase URL and anon key to <code>apps/web/.env</code> to sync across devices.</div>
+          <div className="risk-note">{t('Demo mode stores data only in this browser. Add your Supabase URL and anon key to apps/web/.env to sync across devices.')}</div>
         ) : (
-          <div style={{ marginTop: 18 }}><button className="btn secondary" onClick={() => supabase!.auth.signOut()}>Sign out</button></div>
+          <div style={{ marginTop: 18 }}><button className="btn secondary" onClick={() => supabase!.auth.signOut()}>{t('Sign out')}</button></div>
         )}
       </article>
     </section>

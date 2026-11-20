@@ -12,6 +12,7 @@ import Risk from './pages/Risk'
 import Analytics from './pages/Analytics'
 import Settings from './pages/Settings'
 import Login from './pages/Login'
+import { useT } from './lib/i18n'
 
 function Shell({ email }: { email: string | null }) {
   return (
@@ -33,13 +34,14 @@ function Shell({ email }: { email: string | null }) {
 }
 
 function AuthGate() {
+  const t = useT()
   const [session, setSession] = useState<Session | null | undefined>(undefined)
   useEffect(() => {
     supabase!.auth.getSession().then(({ data }) => setSession(data.session))
     const { data } = supabase!.auth.onAuthStateChange((_e, s) => setSession(s))
     return () => data.subscription.unsubscribe()
   }, [])
-  if (session === undefined) return <div className="center-screen subtle">Loading…</div>
+  if (session === undefined) return <div className="center-screen subtle">{t('Loading…')}</div>
   if (!session) return <Login />
   // key: remount the store when the user changes so no data leaks between sessions
   return <Shell key={session.user.id} email={session.user.email ?? null} />

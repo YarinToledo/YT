@@ -11,7 +11,7 @@ a{color:inherit}
 
 /* Layout */
 .app{min-height:100vh;display:grid;grid-template-columns:245px 1fr}
-.sidebar{background:#0c1219;border-right:1px solid var(--line);padding:26px 17px;display:flex;flex-direction:column;gap:30px;position:sticky;top:0;height:100vh}
+.sidebar{background:#0c1219;border-inline-end:1px solid var(--line);padding:26px 17px;display:flex;flex-direction:column;gap:30px;position:sticky;top:0;height:100vh}
 .brand{display:flex;align-items:center;gap:11px;padding:0 10px}
 .brand-mark{width:35px;height:35px;border:1px solid #8d754e;border-radius:10px;display:grid;place-items:center;color:var(--gold);font-weight:800;font-size:17px}
 .brand-name{font-size:17px;font-weight:750;letter-spacing:1.7px}.brand-sub{font-size:9px;letter-spacing:2px;color:var(--muted)}
@@ -30,7 +30,7 @@ main{min-width:0;padding:28px 34px 60px;max-width:1600px;width:100%;margin:0 aut
 .page-title{font-size:25px;font-weight:650;letter-spacing:-.6px;margin:4px 0 0}
 .top-actions{display:flex;align-items:center;gap:12px}
 .market-status{color:var(--muted);font-size:11px;white-space:nowrap}
-.live-dot{display:inline-block;width:7px;height:7px;background:var(--green);border-radius:50%;margin-right:7px;box-shadow:0 0 10px #55c69a66}
+.live-dot{display:inline-block;width:7px;height:7px;background:var(--green);border-radius:50%;margin-inline-end:7px;box-shadow:0 0 10px #55c69a66}
 .live-dot.demo{background:var(--amber);box-shadow:0 0 10px #e0b25a66}
 .avatar{width:35px;height:35px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;color:var(--gold);font-size:11px;text-transform:uppercase}
 .mobile-menu{display:none;background:transparent;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 10px}
@@ -77,10 +77,10 @@ main{min-width:0;padding:28px 34px 60px;max-width:1600px;width:100%;margin:0 aut
 .table-card .card-head{padding:19px 20px 0}
 .table-scroll{overflow-x:auto}
 table{width:100%;border-collapse:collapse;white-space:nowrap}
-th,td{text-align:left;padding:13px 20px;border-top:1px solid #202b36;font-size:11px}
+th,td{text-align:start;padding:13px 20px;border-top:1px solid #202b36;font-size:11px}
 th{color:#788695;font-weight:500;font-size:10px;letter-spacing:.7px;text-transform:uppercase}
 td{color:#d8dfe6;font-variant-numeric:tabular-nums}
-td.num,th.num{text-align:right}
+td.num,th.num{text-align:end}
 .ticker{font-weight:700;letter-spacing:.4px}
 .company{display:block;color:#758291;font-size:10px;font-weight:400}
 .pill{display:inline-block;border-radius:30px;padding:4px 8px;background:#1c2a31;color:var(--green);font-size:10px;letter-spacing:.4px}
@@ -97,7 +97,7 @@ td.num,th.num{text-align:right}
 .activity-item{display:flex;justify-content:space-between;align-items:center;font-size:11px;gap:10px}
 .activity-item>div:first-child{color:#cbd3db}
 .activity-item small{display:block;color:var(--muted);margin-top:3px}
-.activity-val{text-align:right;font-weight:650;white-space:nowrap}
+.activity-val{text-align:end;font-weight:650;white-space:nowrap}
 
 /* Buttons */
 .btn{border:1px solid #8f7956;background:#c9aa70;color:#111820;padding:9px 14px;border-radius:8px;font-size:11px;font-weight:700;letter-spacing:.3px;white-space:nowrap}
@@ -152,7 +152,14 @@ td.num,th.num{text-align:right}
 .err{color:var(--red);font-size:12px;margin-bottom:12px}
 
 .kv{display:grid;grid-template-columns:auto 1fr;gap:10px 18px;font-size:12px}
-.kv dt{color:var(--muted)}.kv dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+.kv dt{color:var(--muted)}.kv dd{margin:0;text-align:end;font-variant-numeric:tabular-nums}
+
+/* Language toggle + RTL */
+.lang-toggle{background:transparent;border:1px solid var(--line);color:var(--gold);border-radius:8px;padding:6px 9px;font-size:11px;font-weight:700;min-width:38px}
+.lang-toggle:hover{border-color:#8d754e}
+.chart-wrap,.chart-labels{direction:ltr}
+[dir=rtl] body{font-family:Heebo,Assistant,Arial,ui-sans-serif,system-ui,sans-serif}
+[dir=rtl] .eyebrow,[dir=rtl] .nav-label,[dir=rtl] .brand-sub{letter-spacing:0}
 
 @media(max-width:1050px){
   .app{grid-template-columns:205px 1fr}
@@ -161,7 +168,7 @@ td.num,th.num{text-align:right}
 }
 @media(max-width:760px){
   .app{display:block}
-  .sidebar{display:none;position:fixed;z-index:15;inset:0 auto 0 0;width:260px;box-shadow:20px 0 60px #0009}
+  .sidebar{display:none;position:fixed;z-index:15;top:0;bottom:0;inset-inline-start:0;width:260px;box-shadow:0 0 60px #0009}
   .sidebar.open{display:flex}
   .scrim.open{display:block;position:fixed;inset:0;background:#0007;z-index:14}
   .mobile-menu{display:inline-block}

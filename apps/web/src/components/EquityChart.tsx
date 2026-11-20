@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import { useT } from '../lib/i18n'
 import { equityCurve } from '../lib/calc'
 import { money, shortDate } from '../lib/format'
 import { useStore } from '../lib/store'
@@ -7,6 +8,7 @@ const W = 700, H = 230, PAD_T = 20, PAD_B = 20
 
 export default function EquityChart({ days = 30 }: { days?: number }) {
   const { settings, trades } = useStore()
+  const t = useT()
   const pts = useMemo(() => equityCurve(settings, trades, days), [settings, trades, days])
   const [hover, setHover] = useState<number | null>(null)
   const ref = useRef<HTMLDivElement>(null)
@@ -35,13 +37,13 @@ export default function EquityChart({ days = 30 }: { days?: number }) {
     <article className="card">
       <div className="card-head">
         <div>
-          <div className="card-title">Equity Performance</div>
-          <div className="subtle">Realized equity · {days}-day change {last - first >= 0 ? '+' : '−'}{money(Math.abs(last - first))}</div>
+          <div className="card-title">{t('Equity Performance')}</div>
+          <div className="subtle">{t('Realized equity · {n}-day change {v}', { n: days, v: `${last - first >= 0 ? '+' : '−'}${money(Math.abs(last - first))}` })}</div>
         </div>
-        <span className="subtle">{days}D</span>
+        <span className="subtle">{t('{n}D', { n: days })}</span>
       </div>
       <div className="chart-wrap" ref={ref} onPointerMove={onMove} onPointerLeave={() => setHover(null)}>
-        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label={`Equity over the last ${days} days, from ${money(first)} to ${money(last)}`}>
+        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label={t('Equity over the last {n} days, from {a} to {b}', { n: days, a: money(first), b: money(last) })}>
           <defs>
             <linearGradient id="area" x1="0" x2="0" y1="0" y2="1">
               <stop offset="0%" stopColor="#c9aa70" stopOpacity=".24" />
@@ -53,7 +55,7 @@ export default function EquityChart({ days = 30 }: { days?: number }) {
           <path d={area} fill="url(#area)" />
           <path className="chart-line" d={line} />
         </svg>
-        <span className="chart-y" style={{ top: `${(baseY / H) * 100}%` }}>start {money(settings.starting_capital)}</span>
+        <span className="chart-y" style={{ top: `${(baseY / H) * 100}%` }}>{t('start {v}', { v: money(settings.starting_capital) })}</span>
         {hover != null && (
           <>
             <div className="chart-cursor" style={{ left: `${(hover / (pts.length - 1)) * 100}%` }} />

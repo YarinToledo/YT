@@ -1,21 +1,23 @@
 import EquityChart from '../components/EquityChart'
+import { useT } from '../lib/i18n'
 import { tradeStats, type TradeStats } from '../lib/calc'
 import { money, pct, rMult, signedMoney, tone } from '../lib/format'
 import { useStore } from '../lib/store'
 import type { Trade } from '../lib/types'
 
-function Breakdown({ title, groups }: { title: string; groups: [string, TradeStats][] }) {
+function Breakdown({ title, col, groups }: { title: string; col: string; groups: [string, TradeStats][] }) {
+  const t = useT()
   return (
     <section className="card table-card">
       <div className="card-head"><div className="card-title">{title}</div></div>
-      {groups.length === 0 ? <div className="empty" style={{ marginTop: 18 }}>No closed trades yet.</div> : (
+      {groups.length === 0 ? <div className="empty" style={{ marginTop: 18 }}>{t('No closed trades yet.')}</div> : (
         <div className="table-scroll" style={{ marginTop: 18 }}>
           <table>
-            <thead><tr><th>{title.replace('By ', '')}</th><th className="num">Trades</th><th className="num">Win rate</th><th className="num">Avg R</th><th className="num">Net P&amp;L</th></tr></thead>
+            <thead><tr><th>{col}</th><th className="num">{t('Trades')}</th><th className="num">{t('Win rate')}</th><th className="num">{t('Avg R')}</th><th className="num">{t('Net P&L')}</th></tr></thead>
             <tbody>
               {groups.map(([k, s]) => (
                 <tr key={k}>
-                  <td className="ticker">{k}</td>
+                  <td className="ticker">{t(k)}</td>
                   <td className="num">{s.closed}</td>
                   <td className="num">{pct(s.winRate, 0)}</td>
                   <td className={`num ${tone(s.avgR ?? 0)}`}>{rMult(s.avgR)}</td>
@@ -41,17 +43,18 @@ function groupBy(trades: Trade[], key: (t: Trade) => string): [string, TradeStat
 
 export default function Analytics() {
   const { trades } = useStore()
+  const t = useT()
   const s = tradeStats(trades)
   const pf = s.profitFactor == null ? '—' : s.profitFactor === Infinity ? '∞' : s.profitFactor.toFixed(2)
   const cards: [string, string, string, string?][] = [
-    ['Net realized P&L', signedMoney(s.net), `${s.closed} closed trades`, tone(s.net)],
-    ['Win rate', pct(s.winRate, 0), `${s.wins} wins · ${s.losses} losses`],
-    ['Profit factor', pf, 'Gross profit ÷ gross loss'],
-    ['Expectancy', s.expectancy == null ? '—' : signedMoney(s.expectancy), 'Average P&L per trade', tone(s.expectancy ?? 0)],
-    ['Average R', rMult(s.avgR), 'P&L ÷ initial risk', tone(s.avgR ?? 0)],
-    ['Average win', money(s.avgWin), `Best ${s.best == null ? '—' : signedMoney(s.best)}`, 'positive'],
-    ['Average loss', money(s.avgLoss), `Worst ${s.worst == null ? '—' : signedMoney(s.worst)}`, 'negative'],
-    ['Gross profit / loss', `${money(s.grossProfit)}`, `Loss ${money(s.grossLoss)}`],
+    [t('Net realized P&L'), signedMoney(s.net), t('{n} closed trades', { n: s.closed }), tone(s.net)],
+    [t('Win rate'), pct(s.winRate, 0), t('{w} wins · {l} losses', { w: s.wins, l: s.losses })],
+    [t('Profit factor'), pf, t('Gross profit ÷ gross loss')],
+    [t('Expectancy'), s.expectancy == null ? '—' : signedMoney(s.expectancy), t('Average P&L per trade'), tone(s.expectancy ?? 0)],
+    [t('Average R'), rMult(s.avgR), t('P&L ÷ initial risk'), tone(s.avgR ?? 0)],
+    [t('Average win'), money(s.avgWin), t('Best {v}', { v: s.best == null ? '—' : signedMoney(s.best) }), 'positive'],
+    [t('Average loss'), money(s.avgLoss), t('Worst {v}', { v: s.worst == null ? '—' : signedMoney(s.worst) }), 'negative'],
+    [t('Gross profit / loss'), `${money(s.grossProfit)}`, t('Loss {v}', { v: money(s.grossLoss) })],
   ]
   return (
     <div className="stack">
@@ -62,10 +65,10 @@ export default function Analytics() {
       </section>
       <EquityChart days={90} />
       <section className="grid two-col">
-        <Breakdown title="By symbol" groups={groupBy(trades, t => t.symbol)} />
-        <Breakdown title="By setup" groups={groupBy(trades, t => t.setup ?? 'Untagged')} />
+        <Breakdown title={t('By symbol')} col={t('Symbol')} groups={groupBy(trades, x => x.symbol)} />
+        <Breakdown title={t('By setup')} col={t('Setup')} groups={groupBy(trades, x => x.setup ?? 'Untagged')} />
       </section>
-      <Breakdown title="By direction" groups={groupBy(trades, t => t.direction)} />
+      <Breakdown title={t('By direction')} col={t('Direction')} groups={groupBy(trades, x => x.direction)} />
     </div>
   )
 }

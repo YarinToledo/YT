@@ -1,4 +1,5 @@
 import { useCallback, useState, type ReactNode } from 'react'
+import { useT } from '../lib/i18n'
 import Modal from './Modal'
 import { useStore } from '../lib/store'
 import type { Trade, TradeInput } from '../lib/types'
@@ -18,6 +19,7 @@ function strip(t: Trade): TradeInput {
 
 function Dialog({ trade, mode, onClose }: { trade: Trade; mode: DialogMode; onClose(): void }) {
   const { updateTrade } = useStore()
+  const t = useT()
   const now = toLocalInput(new Date())
   const [f, setF] = useState({
     symbol: trade.symbol,
@@ -62,13 +64,13 @@ function Dialog({ trade, mode, onClose }: { trade: Trade; mode: DialogMode; onCl
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     const err = validateTrade(next)
-    if (err) return setError(err)
+    if (err) return setError(t(err))
     setBusy(true)
     try { await updateTrade(trade.id, next); onClose() } catch (x) { setError((x as Error).message) } finally { setBusy(false) }
   }
 
-  const title = mode === 'open' ? `Open ${trade.symbol}` : mode === 'close' ? `Close ${trade.symbol}` : `Edit ${trade.symbol}`
-  const subtitle = mode === 'open' ? 'Record your actual fill.' : mode === 'close' ? 'Record the exit to realize P&L.' : 'Correct any detail of this trade.'
+  const title = t(mode === 'open' ? 'Open {s}' : mode === 'close' ? 'Close {s}' : 'Edit {s}', { s: trade.symbol })
+  const subtitle = t(mode === 'open' ? 'Record your actual fill.' : mode === 'close' ? 'Record the exit to realize P&L.' : 'Correct any detail of this trade.')
   const showCore = mode !== 'close'
   const showOpened = mode === 'open' || (mode === 'edit' && (status === 'OPEN' || status === 'CLOSED'))
   const showClose = mode === 'close' || (mode === 'edit' && status === 'CLOSED')
@@ -77,31 +79,31 @@ function Dialog({ trade, mode, onClose }: { trade: Trade; mode: DialogMode; onCl
     <Modal title={title} subtitle={subtitle} onClose={onClose}>
       <form className="form-grid" onSubmit={submit}>
         {mode === 'edit' && <>
-          <div className="field"><label>Symbol</label><input value={f.symbol} onChange={set('symbol')} maxLength={12} /></div>
-          <div className="field"><label>Company</label><input value={f.company} onChange={set('company')} /></div>
-          <div className="field"><label>Direction</label><select value={f.direction} onChange={set('direction')}><option>LONG</option><option>SHORT</option></select></div>
+          <div className="field"><label>{t('Symbol')}</label><input value={f.symbol} onChange={set('symbol')} maxLength={12} /></div>
+          <div className="field"><label>{t('Company')}</label><input value={f.company} onChange={set('company')} /></div>
+          <div className="field"><label>{t('Direction')}</label><select value={f.direction} onChange={set('direction')}><option value="LONG">{t('LONG')}</option><option value="SHORT">{t('SHORT')}</option></select></div>
         </>}
         {showCore && <>
-          <div className="field"><label>{mode === 'open' ? 'Fill price ($)' : 'Entry ($)'}</label><input type="number" inputMode="decimal" step="any" value={f.entry} onChange={set('entry')} /></div>
-          <div className="field"><label>Quantity</label><input type="number" inputMode="decimal" step="any" value={f.quantity} onChange={set('quantity')} /></div>
-          <div className="field"><label>Stop loss ($)</label><input type="number" inputMode="decimal" step="any" value={f.stop} onChange={set('stop')} /></div>
-          <div className="field"><label>Target ($)</label><input type="number" inputMode="decimal" step="any" value={f.target} onChange={set('target')} /></div>
+          <div className="field"><label>{t(mode === 'open' ? 'Fill price ($)' : 'Entry ($)')}</label><input type="number" inputMode="decimal" step="any" value={f.entry} onChange={set('entry')} /></div>
+          <div className="field"><label>{t('Quantity')}</label><input type="number" inputMode="decimal" step="any" value={f.quantity} onChange={set('quantity')} /></div>
+          <div className="field"><label>{t('Stop loss ($)')}</label><input type="number" inputMode="decimal" step="any" value={f.stop} onChange={set('stop')} /></div>
+          <div className="field"><label>{t('Target ($)')}</label><input type="number" inputMode="decimal" step="any" value={f.target} onChange={set('target')} /></div>
         </>}
-        {showOpened && <div className="field"><label>Opened at</label><input type="datetime-local" value={f.opened} onChange={set('opened')} /></div>}
+        {showOpened && <div className="field"><label>{t('Opened at')}</label><input type="datetime-local" value={f.opened} onChange={set('opened')} /></div>}
         {showClose && <>
-          <div className="field"><label>Exit price ($)</label><input type="number" inputMode="decimal" step="any" value={f.exit} onChange={set('exit')} autoFocus={mode === 'close'} /></div>
-          <div className="field"><label>Closed at</label><input type="datetime-local" value={f.closed} onChange={set('closed')} /></div>
-          <div className="field"><label>Fees ($)</label><input type="number" inputMode="decimal" step="any" min="0" value={f.fees} onChange={set('fees')} /></div>
+          <div className="field"><label>{t('Exit price ($)')}</label><input type="number" inputMode="decimal" step="any" value={f.exit} onChange={set('exit')} autoFocus={mode === 'close'} /></div>
+          <div className="field"><label>{t('Closed at')}</label><input type="datetime-local" value={f.closed} onChange={set('closed')} /></div>
+          <div className="field"><label>{t('Fees ($)')}</label><input type="number" inputMode="decimal" step="any" min="0" value={f.fees} onChange={set('fees')} /></div>
         </>}
-        {mode === 'edit' && <div className="field"><label>Setup</label><input value={f.setup} onChange={set('setup')} placeholder="Breakout, pullback…" /></div>}
-        <div className="field full"><label>Notes</label><textarea value={f.notes} onChange={set('notes')} placeholder={mode === 'close' ? 'What went right or wrong?' : ''} /></div>
+        {mode === 'edit' && <div className="field"><label>{t('Setup')}</label><input value={f.setup} onChange={set('setup')} placeholder={t('Breakout, pullback…')} /></div>}
+        <div className="field full"><label>{t('Notes')}</label><textarea value={f.notes} onChange={set('notes')} placeholder={mode === 'close' ? t('What went right or wrong?') : ''} /></div>
         {preview != null && (
-          <div className="form-result"><span>Entry {money(trade.entry_price)} × {trade.quantity}</span><span>Realized P&amp;L <b className={tone(preview)}>{signedMoney(preview)}</b></span></div>
+          <div className="form-result"><span>{t('Entry {v} × {q}', { v: money(trade.entry_price), q: trade.quantity })}</span><span>{t('Realized P&L')} <b className={tone(preview)}>{signedMoney(preview)}</b></span></div>
         )}
         {error && <div className="form-result error">{error}</div>}
         <div className="form-actions">
-          <button type="button" className="btn secondary" onClick={onClose}>Cancel</button>
-          <button className="btn" disabled={busy}>{busy ? 'Saving…' : mode === 'open' ? 'Open position' : mode === 'close' ? 'Close trade' : 'Save changes'}</button>
+          <button type="button" className="btn secondary" onClick={onClose}>{t('Cancel')}</button>
+          <button className="btn" disabled={busy}>{t(busy ? 'Saving…' : mode === 'open' ? 'Open position' : mode === 'close' ? 'Close trade' : 'Save changes')}</button>
         </div>
       </form>
     </Modal>

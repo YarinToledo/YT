@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useT } from '../lib/i18n'
 import { useStore } from '../lib/store'
 import type { Trade, TradeStatus } from '../lib/types'
 import { rMultiple, tradePnl } from '../lib/calc'
@@ -10,6 +11,7 @@ const FILTERS: ('ALL' | TradeStatus)[] = ['ALL', 'CLOSED', 'OPEN', 'PLANNED', 'C
 
 export default function Journal() {
   const { trades, deleteTrade } = useStore()
+  const tr = useT()
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('ALL')
   const [q, setQ] = useState('')
   const [dialog, openDialog] = useTradeDialog()
@@ -20,7 +22,7 @@ export default function Journal() {
     .sort((a, b) => (b.closed_at ?? b.opened_at ?? b.created_at).localeCompare(a.closed_at ?? a.opened_at ?? a.created_at))
 
   async function remove(t: Trade) {
-    if (!confirm(`Permanently delete this ${t.symbol} trade? This cannot be undone.`)) return
+    if (!confirm(tr('Permanently delete this {s} trade? This cannot be undone.', { s: t.symbol }))) return
     await deleteTrade(t.id).catch(() => {})
   }
 
@@ -32,23 +34,23 @@ export default function Journal() {
         <div className="tabs" role="tablist">
           {FILTERS.map(f => (
             <button key={f} role="tab" aria-selected={filter === f} className={filter === f ? 'active' : ''} onClick={() => setFilter(f)}>
-              {f === 'ALL' ? 'All' : f[0] + f.slice(1).toLowerCase()} · {count(f)}
+              {f === 'ALL' ? tr('All') : tr(f)} · {count(f)}
             </button>
           ))}
         </div>
         <div className="btn-row">
-          <input className="search" placeholder="Search symbol or setup" value={q} onChange={e => setQ(e.target.value)} />
-          <button className="btn secondary" onClick={() => downloadTradesCsv(trades)}>Export CSV</button>
+          <input className="search" placeholder={tr('Search symbol or setup')} value={q} onChange={e => setQ(e.target.value)} />
+          <button className="btn secondary" onClick={() => downloadTradesCsv(trades)}>{tr('Export CSV')}</button>
         </div>
       </div>
       {rows.length === 0 ? (
-        <div className="empty">No trades match.</div>
+        <div className="empty">{tr('No trades match.')}</div>
       ) : (
         <div className="table-scroll">
           <table>
             <thead><tr>
-              <th>Date</th><th>Instrument</th><th>Dir</th><th>Setup</th><th className="num">Entry</th><th className="num">Exit</th>
-              <th className="num">Qty</th><th className="num">P&amp;L</th><th className="num">R</th><th>Status</th><th>Notes</th><th className="num">Actions</th>
+              <th>{tr('Date')}</th><th>{tr('Instrument')}</th><th>{tr('Dir')}</th><th>{tr('Setup')}</th><th className="num">{tr('Entry')}</th><th className="num">{tr('Exit')}</th>
+              <th className="num">{tr('Qty')}</th><th className="num">{tr('P&L')}</th><th className="num">R</th><th>{tr('Status')}</th><th>{tr('Notes')}</th><th className="num">{tr('Actions')}</th>
             </tr></thead>
             <tbody>
               {rows.map(t => {
@@ -57,20 +59,20 @@ export default function Journal() {
                   <tr key={t.id}>
                     <td>{shortDate(t.closed_at ?? t.opened_at ?? t.created_at)}</td>
                     <td><span className="ticker">{t.symbol}</span>{t.company && <span className="company">{t.company}</span>}</td>
-                    <td>{t.direction}</td>
+                    <td>{tr(t.direction)}</td>
                     <td>{t.setup ?? '—'}</td>
                     <td className="num">{px(t.entry_price)}</td>
                     <td className="num">{px(t.exit_price)}</td>
                     <td className="num">{qty(t.quantity)}</td>
                     <td className={`num ${tone(p)}`}>{t.status === 'CLOSED' ? signedMoney(p) : '—'}</td>
                     <td className={`num ${tone(p)}`}>{rMult(rMultiple(t))}</td>
-                    <td><span className={`pill ${t.status}`}>{t.status}</span></td>
+                    <td><span className={`pill ${t.status}`}>{tr(t.status)}</span></td>
                     <td title={t.notes ?? ''} style={{ maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.notes ?? '—'}</td>
                     <td>
                       <div className="row-actions">
-                        {t.status === 'OPEN' && <button className="btn sm" onClick={() => openDialog(t, 'close')}>Close</button>}
-                        <button className="btn sm secondary" onClick={() => openDialog(t, 'edit')}>Edit</button>
-                        <button className="btn sm danger" onClick={() => remove(t)} aria-label={`Delete ${t.symbol} trade`}>Delete</button>
+                        {t.status === 'OPEN' && <button className="btn sm" onClick={() => openDialog(t, 'close')}>{tr('Close')}</button>}
+                        <button className="btn sm secondary" onClick={() => openDialog(t, 'edit')}>{tr('Edit')}</button>
+                        <button className="btn sm danger" onClick={() => remove(t)} aria-label={tr('Delete {s} trade', { s: t.symbol })}>{tr('Delete')}</button>
                       </div>
                     </td>
                   </tr>
