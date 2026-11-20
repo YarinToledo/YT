@@ -12,10 +12,12 @@ import asyncio
 import json
 import logging
 import os
+import ssl
 import urllib.request
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
+import certifi
 from ib_async import IB, ScannerSubscription, Stock, TagValue
 
 from orb import Bar, OrbFilters, evaluate_orb, top_signals, track
@@ -66,7 +68,9 @@ def _post(rows: list[dict]) -> None:
             "x-ingest-secret": INGEST_SECRET,
         },
     )
-    with urllib.request.urlopen(req, timeout=20) as r:
+    # certifi's CA bundle: python.org builds on macOS ship without system certificates.
+    ctx = ssl.create_default_context(cafile=certifi.where())
+    with urllib.request.urlopen(req, timeout=20, context=ctx) as r:
         r.read()
 
 
@@ -224,6 +228,7 @@ async def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     ib = IB()
     orb_day: date | None = None
+    last_orb_try = datetime.min
     orb_rows: list[dict] = []
     last_hot = datetime.min
     last_beat = datetime.min
@@ -241,13 +246,18 @@ async def main() -> None:
 
         if connected and weekday:
             t = now.time()
-            if orb_day != today and time(9, 36) <= t < time(10, 30):
+            if orb_day != today and time(9, 36) <= t < time(10, 30) and now - last_orb_try >= timedelta(minutes=3):
+                last_orb_try = now
                 try:
-                    orb_rows = await run_orb(ib, today)
-                    await push(orb_rows)
+                    rows = await run_orb(ib, today)
+                    if rows:
+                        orb_rows = rows
+                        await push(orb_rows)
+                        orb_day = today  # done for today
+                    else:
+                        log.info("ORB: no signals (scanner empty or blocked); retrying in 3 minutes until 10:30")
                 except Exception as e:
                     log.warning("ORB run failed: %s", e)
-                orb_day = today  # one attempt per day
             if time(9, 50) <= t <= time(16, 5) and now - last_hot >= timedelta(minutes=10):
                 try:
                     rows = await run_hot(ib, today, orb_rows if orb_day == today else [])
