@@ -9,6 +9,7 @@ export const PAGES = [
   { path: '/positions', label: 'Open Positions', title: 'Open Positions', ico: '▤', group: 'WORKSPACE' },
   { path: '/journal', label: 'Trade Journal', title: 'Trade Journal', ico: '▧', group: 'WORKSPACE' },
   { path: '/watch', label: 'Market Watch', title: 'Market Watch', ico: '⌁', group: 'WORKSPACE' },
+  { path: '/hot', label: 'Hot Stocks', title: 'Hot Stocks', ico: '✦', group: 'WORKSPACE' },
   { path: '/analyze', label: 'Stock Analysis', title: 'Stock Analysis', ico: '◎', group: 'WORKSPACE' },
   { path: '/risk', label: 'Risk Management', title: 'Risk Management', ico: '◈', group: 'MANAGEMENT' },
   { path: '/analytics', label: 'Analytics', title: 'Analytics', ico: '▥', group: 'MANAGEMENT' },

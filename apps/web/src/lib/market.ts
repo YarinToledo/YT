@@ -1,3 +1,4 @@
+import type { RawBar } from './hotstocks'
 import { isDemo, supabase } from './data'
 import type { Bar } from './indicators'
 
@@ -171,3 +172,26 @@ export async function fetchAiAnalysis(symbol: string, context: unknown): Promise
   if (!data || data.error || !data.analysis) throw new Error(data?.error ?? 'Empty response')
   return data
 }
+
+// ---- Hot stocks ----
+
+export interface ScanRaw { fetchedAt: string; candidates: { symbol: string; name: string | null; source: string[]; bars?: RawBar[]; error?: string }[]; errors: Record<string, string>; requests: number }
+export interface RankPick { symbol: string; rank: number; verdict: 'enter' | 'wait' | 'avoid'; why_moving: string; reason: string; risk: string }
+export interface RankResult { model: string; generatedAt: string; ranking: { market_note: string; picks: RankPick[] }; sources: { title: string; url: string }[] }
+
+async function invoke<T>(body: Record<string, unknown>): Promise<T> {
+  if (isDemo || !supabase) throw new Error('Stock analysis needs the Supabase connection (it is not available in demo mode).')
+  const { data, error } = await supabase.functions.invoke<T & { error?: string }>('market-data', { body })
+  if (error) {
+    let msg = error.message
+    try { const b = await (error as { context?: Response }).context?.json(); if (b?.error) msg = b.error } catch { /* ignore */ }
+    throw new Error(msg)
+  }
+  if (!data || (data as { error?: string }).error) throw new Error((data as { error?: string } | null)?.error ?? 'Empty response')
+  return data
+}
+
+/** Tonight's candidates (FMP gainers + most active + extra symbols) with daily bars. ~2 + N FMP requests. */
+export const fetchScan = (extra: string[]) => invoke<ScanRaw>({ scan: { extra } })
+/** Claude ranks the candidates that passed the strategy rules. Costs a few cents. */
+export const fetchRanking = (candidates: unknown, trader: unknown) => invoke<RankResult>({ rank: { candidates, trader } })

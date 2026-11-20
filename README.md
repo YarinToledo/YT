@@ -55,6 +55,13 @@ and a trade plan. Each run costs a few cents.
 
 Indicators (SMA, RSI, MACD, ATR, support/resistance) are computed in the browser in `apps/web/src/lib/indicators.ts`.
 
+## Hot stocks
+
+The **Hot Stocks** page runs a momentum-swing "stocks in play" screen on end-of-day data: FMP biggest gainers + most active
++ your watchlist, filtered in the browser (`apps/web/src/lib/hotstocks.ts`) for unusual volume, a strong close and an uptrend.
+Each pass gets a buy-stop / stop / target plan at your R:R and risk %. "Rank with AI" asks Claude to check the news behind each
+move and rank them. A scan costs about 2 + N FMP requests (N ≤ 30); the free plan allows 250 a day.
+
 ## Deploy to Vercel
 
 Import the repo in Vercel, set **Root Directory** to `apps/web`, framework preset Vite, and add the

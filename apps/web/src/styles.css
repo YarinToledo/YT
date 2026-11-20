@@ -199,6 +199,18 @@ td.num,th.num{text-align:end}
 .ai-sources{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:14px;font-size:11px}
 .ai-sources a{color:var(--blue)}
 
+/* Hot stocks */
+.filters{margin-top:12px}
+.filters summary{cursor:pointer;color:var(--gold);font-size:12px}
+.hot-list{display:flex;flex-direction:column}
+.hot-item{padding:16px 20px;border-top:1px solid #202b36}
+.hot-top{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+.hot-rank{display:inline-block;background:var(--gold);color:#111820;border-radius:6px;padding:1px 6px;font-size:11px;font-weight:800;margin-inline-end:8px}
+.hot-price{display:flex;gap:10px;align-items:baseline;margin-inline-start:auto}
+.hot-metrics{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:8px;font-size:11px;color:var(--muted)}
+.hot-metrics b{color:var(--text);font-weight:600}
+.hot-ai{margin-top:10px;font-size:12px;line-height:1.7;color:#c3ccd5;display:flex;flex-direction:column;gap:3px}
+
 /* Language toggle + RTL */
 .lang-toggle{background:transparent;border:1px solid var(--line);color:var(--gold);border-radius:8px;padding:6px 9px;font-size:11px;font-weight:700;min-width:38px}
 .lang-toggle:hover{border-color:#8d754e}

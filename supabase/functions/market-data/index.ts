@@ -92,18 +92,14 @@ const SUBMIT_TOOL = {
   },
 }
 
-async function runAnalyst(symbol: string, context: unknown) {
+/** One Claude request with web search plus a strict "submit" tool; returns the tool input or an error Response. */
+// deno-lint-ignore no-explicit-any
+async function callClaude(system: string, tool: any, userContent: string): Promise<Response | { input: unknown; model: string; sources: { title: string; url: string }[] }> {
   const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
   if (!apiKey) return json({ error: 'ANTHROPIC_API_KEY secret is not set in Supabase' }, 500)
-  const ctx = JSON.stringify(context ?? {})
-  if (ctx.length > 40_000) return json({ error: 'Context too large' }, 400)
-
   const client = new Anthropic({ apiKey })
   // deno-lint-ignore no-explicit-any
-  const messages: any[] = [{
-    role: 'user',
-    content: `Analyze ${symbol}. Today is ${new Date().toISOString().slice(0, 10)}.\n\nData from the app (JSON):\n${ctx}`,
-  }]
+  const messages: any[] = [{ role: 'user', content: userContent }]
   // deno-lint-ignore no-explicit-any
   let response: any = null
   for (let i = 0; i < 4; i++) {
@@ -114,8 +110,8 @@ async function runAnalyst(symbol: string, context: unknown) {
       betas: ['server-side-fallback-2026-07-01'],
       fallbacks: 'default', // re-run on a fallback model if the request is declined
       output_config: { effort: 'medium' },
-      system: AI_SYSTEM,
-      tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 4 }, SUBMIT_TOOL],
+      system,
+      tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 5 }, tool],
       messages,
     })
     // Server-side search loop paused: resend with the partial turn and the API resumes.
@@ -125,18 +121,128 @@ async function runAnalyst(symbol: string, context: unknown) {
     }
     break
   }
-
   if (response?.stop_reason === 'refusal') return json({ error: 'The AI declined this request' }, 502)
   // deno-lint-ignore no-explicit-any
-  const call = response?.content?.find((b: any) => b.type === 'tool_use' && b.name === 'submit_analysis')
+  const call = response?.content?.find((b: any) => b.type === 'tool_use' && b.name === tool.name)
   if (!call) return json({ error: `The AI did not return an analysis (stop: ${response?.stop_reason ?? 'unknown'})` }, 502)
   // deno-lint-ignore no-explicit-any
   const sources = (response.content as any[])
     .filter(b => b.type === 'web_search_tool_result' && Array.isArray(b.content))
     // deno-lint-ignore no-explicit-any
     .flatMap(b => b.content.map((r: any) => ({ title: r.title, url: r.url })))
-    .slice(0, 8)
-  return json({ symbol, model: response.model, generatedAt: new Date().toISOString(), analysis: call.input, sources })
+    .slice(0, 10)
+  return { input: call.input, model: response.model, sources }
+}
+
+async function runAnalyst(symbol: string, context: unknown) {
+  const ctx = JSON.stringify(context ?? {})
+  if (ctx.length > 40_000) return json({ error: 'Context too large' }, 400)
+  const r = await callClaude(AI_SYSTEM, SUBMIT_TOOL, `Analyze ${symbol}. Today is ${new Date().toISOString().slice(0, 10)}.\n\nData from the app (JSON):\n${ctx}`)
+  if (r instanceof Response) return r
+  return json({ symbol, model: r.model, generatedAt: new Date().toISOString(), analysis: r.input, sources: r.sources })
+}
+
+// ---------------------------------------------------------------------------
+// Hot stocks: candidate scan (FMP) and AI ranking
+// ---------------------------------------------------------------------------
+
+const RANK_SYSTEM = `You are a swing-trading analyst reviewing tonight's "stocks in play" scan for one retail trader.
+Strategy: momentum swing on US stocks. A candidate closed near its high on unusually high volume while in an uptrend
+(above its 50- and 200-day averages). The plan is a buy-stop above the signal day's high, a stop under the signal day's low
+(capped at 2×ATR), and a target at the trader's reward:risk ratio. Holding period is days to a few weeks. Long only.
+
+For the candidates you receive (already filtered by these rules, with computed metrics and the plan levels):
+1. Use web search to find WHY each stock moved (earnings, guidance, upgrade, contract, sector news, short squeeze, offering).
+   Search efficiently: one or two broad searches can cover several tickers.
+2. Judge the quality of each setup: a fundamental catalyst with follow-through potential beats a low-quality spike; flag
+   dilution/offerings, binary events (earnings in the next few days, FDA), and moves that look exhausted.
+3. Rank the candidates from best to worst and give each a verdict: enter (take the breakout trigger), wait (watch, needs
+   more confirmation), or avoid.
+
+Write all text in Hebrew, concise, for a trader who knows the basics. Keep tickers and numbers as they are.
+This is decision support; the trader decides. When done, call submit_ranking exactly once. Do not write the answer as text.`
+
+const RANK_TOOL = {
+  name: 'submit_ranking',
+  description: 'Submit the ranked candidates. Call exactly once, at the end.',
+  strict: true,
+  input_schema: {
+    type: 'object', additionalProperties: false, required: ['market_note', 'picks'],
+    properties: {
+      market_note: { type: 'string', description: 'Hebrew, 1-2 sentences on the overall market backdrop today.' },
+      picks: {
+        type: 'array',
+        items: {
+          type: 'object', additionalProperties: false,
+          required: ['symbol', 'rank', 'verdict', 'why_moving', 'reason', 'risk'],
+          properties: {
+            symbol: { type: 'string' },
+            rank: { type: 'integer', description: '1 = best' },
+            verdict: { type: 'string', enum: ['enter', 'wait', 'avoid'] },
+            why_moving: { type: 'string', description: 'Hebrew: the catalyst behind the move.' },
+            reason: { type: 'string', description: 'Hebrew: why this rank and verdict.' },
+            risk: { type: 'string', description: 'Hebrew: the main risk (e.g. earnings date, offering, extended).' },
+          },
+        },
+      },
+    },
+  },
+}
+
+async function runRanker(candidates: unknown, trader: unknown) {
+  const payload = JSON.stringify({ candidates, trader })
+  if (payload.length > 60_000) return json({ error: 'Context too large' }, 400)
+  const r = await callClaude(RANK_SYSTEM, RANK_TOOL, `Today is ${new Date().toISOString().slice(0, 10)}. Rank tonight's candidates.\n\nData (JSON):\n${payload}`)
+  if (r instanceof Response) return r
+  return json({ model: r.model, generatedAt: new Date().toISOString(), ranking: r.input, sources: r.sources })
+}
+
+/** Gainers + most active + extra symbols, each with ~14 months of daily bars. */
+async function runScan(key: string, extra: string[]) {
+  const SYM = /^[A-Z]{1,5}$/ // common stocks only (skips warrants, units, foreign suffixes)
+  const lists: Record<string, string> = { gainers: 'biggest-gainers', actives: 'most-actives' }
+  const errors: Record<string, string> = {}
+  const pool = new Map<string, { symbol: string; name: string | null; source: string[] }>()
+  await Promise.all(Object.entries(lists).map(async ([name, path]) => {
+    try {
+      const r = await fetch(`${FMP}/${path}?apikey=${key}`)
+      const d = await r.json().catch(() => null)
+      if (!r.ok || !Array.isArray(d)) { errors[name] = `${r.status}: ${String((d as Record<string, unknown> | null)?.['Error Message'] ?? '').slice(0, 120)}`; return }
+      // deno-lint-ignore no-explicit-any
+      for (const q of d as any[]) {
+        const sym = String(q.symbol ?? '').toUpperCase()
+        const price = Number(q.price)
+        if (!SYM.test(sym) || !(price >= 3)) continue
+        const ex = String(q.exchange ?? '').toUpperCase()
+        if (ex && !/NASDAQ|NYSE|AMEX/.test(ex)) continue
+        const cur = pool.get(sym) ?? { symbol: sym, name: q.name ?? null, source: [] as string[] }
+        cur.source.push(name)
+        pool.set(sym, cur)
+      }
+    } catch (e) { errors[name] = String((e as Error).message ?? e) }
+  }))
+  for (const s of extra) {
+    const sym = String(s).toUpperCase()
+    if (!/^[A-Z0-9.\-]{1,12}$/.test(sym)) continue
+    const cur = pool.get(sym) ?? { symbol: sym, name: null, source: [] as string[] }
+    cur.source.push('watchlist')
+    pool.set(sym, cur)
+  }
+  // Cap history requests to protect the free plan's daily quota.
+  const picked = [...pool.values()].sort((a, b) => b.source.length - a.source.length).slice(0, 30)
+  const from = new Date(Date.now() - 420 * 86_400_000).toISOString().slice(0, 10)
+  const results = await Promise.all(picked.map(async c => {
+    try {
+      const r = await fetch(`${FMP}/historical-price-eod/full?symbol=${encodeURIComponent(c.symbol)}&from=${from}&apikey=${key}`)
+      const d = await r.json().catch(() => null)
+      // deno-lint-ignore no-explicit-any
+      const rows: any[] = Array.isArray(d) ? d : (d?.historical ?? [])
+      if (!r.ok || rows.length === 0) return { ...c, error: `${r.status}` }
+      const bars = rows.map(x => [String(x.date), +x.open, +x.high, +x.low, +x.close, +x.volume]).sort((a, b) => String(a[0]).localeCompare(String(b[0])))
+      return { ...c, bars }
+    } catch (e) { return { ...c, error: String((e as Error).message ?? e) } }
+  }))
+  return json({ fetchedAt: new Date().toISOString(), candidates: results, errors, requests: 2 + picked.length })
 }
 
 Deno.serve(async (req: Request) => {
@@ -158,8 +264,21 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // Ranking mode: { rank: { candidates, trader } } → Claude ranks tonight's scan.
+  if (body?.rank) {
+    try {
+      return await runRanker(body.rank.candidates, body.rank.trader)
+    } catch (e) {
+      const status = (e as { status?: number }).status
+      return json({ error: `AI request failed${status ? ` (${status})` : ''}: ${String((e as Error).message ?? e).slice(0, 300)}` }, 502)
+    }
+  }
+
   const key = Deno.env.get('FMP_API_KEY')
   if (!key) return json({ error: 'FMP_API_KEY secret is not set in Supabase' }, 500)
+
+  // Scan mode: { scan: { extra: [...] } } → hot-stock candidates with daily bars.
+  if (body?.scan) return await runScan(key, Array.isArray(body.scan.extra) ? body.scan.extra.slice(0, 20) : [])
 
   // Quotes mode: { symbols: [...] } → latest price and daily change for each (used by the watchlist).
   if (Array.isArray(body?.symbols)) {
