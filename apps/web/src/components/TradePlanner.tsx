@@ -25,10 +25,15 @@ const TradePlanner = forwardRef<HTMLElement>(function TradePlanner(_, ref) {
     const s = params.get('symbol')
     if (s) {
       setSymbol(s)
-      params.delete('symbol')
+      const e = params.get('entry'), st = params.get('stop'), tg = params.get('target')
+      if (e) { setEntry(e); setDirection('LONG') }
+      if (st) setStop(st)
+      if (tg) setTarget(tg)
+      for (const k of ['symbol', 'entry', 'stop', 'target']) params.delete(k)
       setParams(params, { replace: true })
+      if (e) (ref as React.RefObject<HTMLElement> | null)?.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
-  }, [params, setParams])
+  }, [params, setParams, ref])
 
   const result = planPosition({
     direction,

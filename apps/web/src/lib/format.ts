@@ -26,3 +26,13 @@ export const toLocalInput = (d: Date) => {
   const z = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
   return z.toISOString().slice(0, 16)
 }
+
+/** 1.2T / 345.6B / 12.3M — for market caps, revenue, volume. */
+export const compact = (n: number | null | undefined) => {
+  if (n == null || !isFinite(n)) return '—'
+  const a = Math.abs(n)
+  const [d, s] = a >= 1e12 ? [1e12, 'T'] : a >= 1e9 ? [1e9, 'B'] : a >= 1e6 ? [1e6, 'M'] : a >= 1e3 ? [1e3, 'K'] : [1, '']
+  const v = (n / d).toFixed(a >= 1e3 ? 1 : 0)
+  return getLang() === 'he' ? `⁦${v}${s}⁩` : `${v}${s}`
+}
+export const num2 = (n: number | null | undefined, digits = 2) => (n == null || !isFinite(n) ? '—' : n.toFixed(digits))

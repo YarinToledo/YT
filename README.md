@@ -40,6 +40,17 @@ With no Supabase keys the app runs in **demo mode**: sample data stored in your 
 4. Copy `apps/web/.env.example` to `apps/web/.env` and fill in Settings → API → Project URL and anon key.
 5. Restart `npm run dev` and sign in.
 
+## Stock analysis (Financial Modeling Prep)
+
+The **Stock Analysis** page calls the `market-data` Edge Function, which proxies Financial Modeling Prep so the key stays server-side.
+
+1. Get a free key at financialmodelingprep.com.
+2. Supabase → Edge Functions → Secrets → add `FMP_API_KEY`.
+3. Deploy `supabase/functions/market-data/index.ts` (Dashboard → Edge Functions → Deploy a new function → Via Editor, name `market-data`),
+   or `npx supabase functions deploy market-data --project-ref <ref>`.
+
+Indicators (SMA, RSI, MACD, ATR, support/resistance) are computed in the browser in `apps/web/src/lib/indicators.ts`.
+
 ## Deploy to Vercel
 
 Import the repo in Vercel, set **Root Directory** to `apps/web`, framework preset Vite, and add the

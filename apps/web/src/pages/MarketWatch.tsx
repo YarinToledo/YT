@@ -47,6 +47,7 @@ export default function MarketWatch() {
                       <td>{shortDate(w.created_at)}</td>
                       <td>
                         <div className="row-actions">
+                          <Link className="btn sm secondary" style={{ textDecoration: 'none' }} to={`/analyze?s=${encodeURIComponent(w.symbol)}`}>{t('Analyze')}</Link>
                           <Link className="btn sm" style={{ textDecoration: 'none' }} to={`/?symbol=${encodeURIComponent(w.symbol)}`}>{t('Plan trade')}</Link>
                           <button className="btn sm danger" onClick={() => removeWatch(w.symbol).catch(() => {})}>{t('Remove')}</button>
                         </div>

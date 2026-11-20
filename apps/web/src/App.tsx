@@ -12,6 +12,7 @@ import Risk from './pages/Risk'
 import Analytics from './pages/Analytics'
 import Settings from './pages/Settings'
 import Login from './pages/Login'
+import Analyze from './pages/Analyze'
 import { useT } from './lib/i18n'
 
 function Shell({ email }: { email: string | null }) {
@@ -23,6 +24,7 @@ function Shell({ email }: { email: string | null }) {
           <Route path="positions" element={<Positions />} />
           <Route path="journal" element={<Journal />} />
           <Route path="watch" element={<MarketWatch />} />
+          <Route path="analyze" element={<Analyze />} />
           <Route path="risk" element={<Risk />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="settings" element={<Settings email={email} />} />
