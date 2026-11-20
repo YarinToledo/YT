@@ -17,9 +17,12 @@ a{color:inherit}
 .brand-name{font-size:17px;font-weight:750;letter-spacing:1.7px}.brand-sub{font-size:9px;letter-spacing:2px;color:var(--muted)}
 .nav-label{font-size:10px;color:#687685;letter-spacing:1.6px;padding:0 12px;margin-bottom:8px}
 .nav{display:grid;gap:5px}
-.nav a{text-decoration:none;color:#9ba7b3;padding:11px 12px;border-radius:9px;display:flex;gap:12px;align-items:center}
-.nav a.active,.nav a:hover{background:#1b2631;color:#f3e6ce}
-.nav .ico{width:18px;text-align:center;color:var(--gold)}
+.nav a{text-decoration:none;color:#a7b2bd;padding:10px 12px;border-radius:10px;display:flex;gap:12px;align-items:center;font-size:13.5px;transition:background .15s,color .15s}
+.nav a:hover{background:#18222d;color:#f3e6ce}
+.nav a.active{background:linear-gradient(135deg,#d4b67c,#b8975c);color:#111820;font-weight:650;box-shadow:0 6px 18px #c9aa7026}
+.nav a.active .ico{color:#111820}
+.nav .ico{width:20px;display:grid;place-items:center;color:var(--gold);flex:none}
+.icon{display:block}
 .side-bottom{margin-top:auto;border-top:1px solid var(--line);padding:18px 10px 0;color:var(--muted);font-size:11px}
 .side-bottom .ver{color:#53616e}
 .scrim{display:none}
@@ -27,7 +30,7 @@ main{min-width:0;padding:28px 34px 60px;max-width:1600px;width:100%;margin:0 aut
 .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:30px;gap:12px}
 .topbar-left{display:flex;align-items:center;gap:12px}
 .eyebrow{color:var(--gold);font-size:10px;letter-spacing:2px;text-transform:uppercase}
-.page-title{font-size:25px;font-weight:650;letter-spacing:-.6px;margin:4px 0 0}
+.page-title{font-size:30px;font-weight:750;letter-spacing:-.6px;margin:4px 0 0;line-height:1.15}
 .top-actions{display:flex;align-items:center;gap:12px}
 .market-status{color:var(--muted);font-size:11px;white-space:nowrap}
 .live-dot{display:inline-block;width:7px;height:7px;background:var(--green);border-radius:50%;margin-inline-end:7px;box-shadow:0 0 10px #55c69a66}
@@ -38,9 +41,9 @@ main{min-width:0;padding:28px 34px 60px;max-width:1600px;width:100%;margin:0 aut
 /* Cards & grids */
 .grid{display:grid;gap:15px}
 .metrics{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:17px}
-.card{background:linear-gradient(145deg,#121b25,#0f161f);border:1px solid var(--line);border-radius:var(--radius);padding:19px;min-width:0}
-.metric-label{color:var(--muted);font-size:11px;letter-spacing:.6px;text-transform:uppercase}
-.metric-value{font-size:26px;font-weight:650;letter-spacing:-.7px;margin:8px 0 4px;font-variant-numeric:tabular-nums}
+.card{background:linear-gradient(145deg,#131c27,#0f161f);border:1px solid var(--line);border-radius:var(--radius);padding:20px;min-width:0;box-shadow:0 1px 0 #ffffff06 inset,0 10px 30px #00000026}
+.metric-label{color:#9aa6b2;font-size:12px;letter-spacing:.4px;text-transform:uppercase;font-weight:550}
+.metric-value{font-size:31px;font-weight:750;letter-spacing:-.8px;margin:10px 0 4px;font-variant-numeric:tabular-nums;line-height:1.1}
 .positive{color:var(--green)}.negative{color:var(--red)}.warn{color:var(--amber)}
 .metric-foot{font-size:11px;color:var(--muted)}
 .main-grid{grid-template-columns:minmax(0,1.65fr) minmax(280px,.85fr);margin-bottom:16px}
@@ -48,7 +51,7 @@ main{min-width:0;padding:28px 34px 60px;max-width:1600px;width:100%;margin:0 aut
 .two-col{grid-template-columns:1fr 1fr}
 .stack{display:grid;gap:16px}
 .card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:10px}
-.card-title{font-size:13px;font-weight:650;letter-spacing:.3px;text-transform:uppercase}
+.card-title{font-size:14px;font-weight:700;letter-spacing:.3px;text-transform:uppercase}
 .subtle{color:var(--muted);font-size:11px}
 
 /* Chart */
@@ -66,9 +69,12 @@ main{min-width:0;padding:28px 34px 60px;max-width:1600px;width:100%;margin:0 aut
 .risk-list{display:grid;gap:17px}
 .risk-row{display:flex;justify-content:space-between;gap:10px;font-size:12px}
 .risk-row span:first-child{color:var(--muted)}
-.progress{height:5px;background:#26313c;border-radius:5px;margin-top:8px;overflow:hidden}
-.progress i{display:block;height:100%;background:var(--gold);border-radius:5px;transition:width .3s}
-.progress i.over{background:var(--red)}
+.progress{height:7px;background:#232e39;border-radius:6px;overflow:hidden;flex:1}
+.progress i{display:block;height:100%;background:var(--gold);border-radius:6px;transition:width .3s}
+.progress i.low{background:var(--green)}.progress i.mid{background:var(--amber)}.progress i.high,.progress i.over{background:var(--red)}
+.progress-row{display:flex;align-items:center;gap:10px;margin-top:9px}
+.progress-pct{font-size:11px;font-weight:700;min-width:36px;text-align:end;font-variant-numeric:tabular-nums}
+.progress-pct.low{color:var(--green)}.progress-pct.mid{color:var(--amber)}.progress-pct.high{color:var(--red)}
 .risk-note{margin-top:18px;padding:11px 12px;border:1px solid #66563866;background:#c9aa7010;border-radius:9px;color:#cbb58e;font-size:11px}
 .risk-note.danger{border-color:#e2767655;background:#e2767612;color:#efaaaa}
 
@@ -83,9 +89,9 @@ td{color:#d8dfe6;font-variant-numeric:tabular-nums}
 td.num,th.num{text-align:end}
 .ticker{font-weight:700;letter-spacing:.4px}
 .company{display:block;color:#758291;font-size:10px;font-weight:400}
-.pill{display:inline-block;border-radius:30px;padding:4px 8px;background:#1c2a31;color:var(--green);font-size:10px;letter-spacing:.4px}
-.pill.PLANNED{background:#1f2733;color:var(--blue)}
-.pill.OPEN{background:#1c2a31;color:var(--green)}
+.pill{display:inline-block;border-radius:8px;padding:4px 10px;background:#1c2a31;color:var(--green);font-size:11px;font-weight:650;letter-spacing:.3px;border:1px solid transparent}
+.pill.PLANNED{background:#e0b25a14;color:var(--amber);border-color:#e0b25a40}
+.pill.OPEN{background:#55c69a14;color:var(--green);border-color:#55c69a40}
 .pill.CLOSED{background:#25282c;color:#b9c2cb}
 .pill.CANCELLED{background:#2b2424;color:var(--red)}
 .row-actions{display:flex;gap:6px;justify-content:flex-end}

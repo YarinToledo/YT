@@ -3,17 +3,18 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { isDemo } from '../lib/data'
 import { useStore } from '../lib/store'
 import { LangToggle, useT } from '../lib/i18n'
+import Icon from './Icon'
 
 export const PAGES = [
-  { path: '/', label: 'Overview', title: 'Portfolio Overview', ico: '◫', group: 'WORKSPACE' },
-  { path: '/positions', label: 'Open Positions', title: 'Open Positions', ico: '▤', group: 'WORKSPACE' },
-  { path: '/journal', label: 'Trade Journal', title: 'Trade Journal', ico: '▧', group: 'WORKSPACE' },
-  { path: '/watch', label: 'Market Watch', title: 'Market Watch', ico: '⌁', group: 'WORKSPACE' },
-  { path: '/hot', label: 'Hot Stocks', title: 'Hot Stocks', ico: '✦', group: 'WORKSPACE' },
-  { path: '/analyze', label: 'Stock Analysis', title: 'Stock Analysis', ico: '◎', group: 'WORKSPACE' },
-  { path: '/risk', label: 'Risk Management', title: 'Risk Management', ico: '◈', group: 'MANAGEMENT' },
-  { path: '/analytics', label: 'Analytics', title: 'Analytics', ico: '▥', group: 'MANAGEMENT' },
-  { path: '/settings', label: 'Settings', title: 'Settings', ico: '⚙', group: 'MANAGEMENT' },
+  { path: '/', label: 'Overview', title: 'Portfolio Overview', ico: 'overview', group: 'WORKSPACE' },
+  { path: '/positions', label: 'Open Positions', title: 'Open Positions', ico: 'positions', group: 'WORKSPACE' },
+  { path: '/journal', label: 'Trade Journal', title: 'Trade Journal', ico: 'journal', group: 'WORKSPACE' },
+  { path: '/watch', label: 'Market Watch', title: 'Market Watch', ico: 'watch', group: 'WORKSPACE' },
+  { path: '/hot', label: 'Hot Stocks', title: 'Hot Stocks', ico: 'hot', group: 'WORKSPACE' },
+  { path: '/analyze', label: 'Stock Analysis', title: 'Stock Analysis', ico: 'analyze', group: 'WORKSPACE' },
+  { path: '/risk', label: 'Risk Management', title: 'Risk Management', ico: 'risk', group: 'MANAGEMENT' },
+  { path: '/analytics', label: 'Analytics', title: 'Analytics', ico: 'analytics', group: 'MANAGEMENT' },
+  { path: '/settings', label: 'Settings', title: 'Settings', ico: 'settings', group: 'MANAGEMENT' },
 ] as const
 
 export function Brand() {
@@ -44,7 +45,7 @@ export default function Layout({ email }: { email: string | null }) {
             <nav className="nav">
               {PAGES.filter(p => p.group === group).map(p => (
                 <NavLink key={p.path} to={p.path} end onClick={() => setOpen(false)}>
-                  <span className="ico">{p.ico}</span> {t(p.label)}
+                  <span className="ico"><Icon name={p.ico} /></span> {t(p.label)}
                 </NavLink>
               ))}
             </nav>

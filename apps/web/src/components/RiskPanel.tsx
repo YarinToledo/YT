@@ -3,9 +3,17 @@ import { useT } from '../lib/i18n'
 import { plannedRR } from '../lib/calc'
 import { useStore } from '../lib/store'
 
+/** Usage bar: green while comfortable, amber from 50%, red from 80% of the limit. */
 function Bar({ value, max }: { value: number; max: number }) {
-  const w = max > 0 ? Math.min(100, (value / max) * 100) : 0
-  return <div className="progress"><i className={value >= max && max > 0 ? 'over' : ''} style={{ width: `${w}%` }} /></div>
+  const ratio = max > 0 ? value / max : 0
+  const w = Math.min(100, ratio * 100)
+  const level = ratio >= 0.8 ? 'high' : ratio >= 0.5 ? 'mid' : 'low'
+  return (
+    <div className="progress-row">
+      <div className="progress"><i className={level} style={{ width: `${w}%` }} /></div>
+      <span className={`progress-pct ${level}`}>{Math.round(ratio * 100)}%</span>
+    </div>
+  )
 }
 
 export default function RiskPanel() {
@@ -21,15 +29,15 @@ export default function RiskPanel() {
       <div className="card-head"><div className="card-title">{t('Risk Control')}</div><span className="subtle">{t('Live usage')}</span></div>
       <div className="risk-list">
         <div>
-          <div className="risk-row"><span>{t('Open risk · {a}/{b} positions', { a: u.openCount, b: s.max_open_positions })}</span><b>{money(u.openRisk)} / {money(u.riskPerTrade * s.max_open_positions)}</b></div>
+          <div className="risk-row"><span>{t('Open risk · {a}/{b} positions', { a: u.openCount, b: s.max_open_positions })}</span><b dir="ltr">{money(u.openRisk)} / {money(u.riskPerTrade * s.max_open_positions)}</b></div>
           <Bar value={u.openRisk} max={u.riskPerTrade * s.max_open_positions} />
         </div>
         <div>
-          <div className="risk-row"><span>{t('Daily loss · limit {v}%', { v: s.daily_loss_limit_pct })}</span><b>{money(u.dailyLoss)} / {money(u.dailyLimit)}</b></div>
+          <div className="risk-row"><span>{t('Daily loss · limit {v}%', { v: s.daily_loss_limit_pct })}</span><b dir="ltr">{money(u.dailyLoss)} / {money(u.dailyLimit)}</b></div>
           <Bar value={u.dailyLoss} max={u.dailyLimit} />
         </div>
         <div>
-          <div className="risk-row"><span>{t('Weekly loss · limit {v}%', { v: s.weekly_loss_limit_pct })}</span><b>{money(u.weeklyLoss)} / {money(u.weeklyLimit)}</b></div>
+          <div className="risk-row"><span>{t('Weekly loss · limit {v}%', { v: s.weekly_loss_limit_pct })}</span><b dir="ltr">{money(u.weeklyLoss)} / {money(u.weeklyLimit)}</b></div>
           <Bar value={u.weeklyLoss} max={u.weeklyLimit} />
         </div>
         <div>
