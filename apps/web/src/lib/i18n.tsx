@@ -337,6 +337,22 @@ const HE: Record<string, string> = {
   'Above the 50- and 200-day averages': 'מעל ממוצעי 50 ו-200 יום',
   'Automated screen based on historical patterns; most breakouts fail and past results do not guarantee future ones. This is decision support, not investment advice.': 'סריקה אוטומטית שמבוססת על דפוסים היסטוריים. רוב הפריצות נכשלות, ותוצאות עבר לא מבטיחות תוצאות עתידיות. זה כלי לתמיכה בהחלטה, לא ייעוץ השקעות.',
 
+  // Live IBKR
+  'Live from IBKR': 'בזמן אמת מ-IBKR',
+  'Worker not connected yet. See the setup steps.': 'השרת עדיין לא מחובר. ראה את שלבי ההקמה.',
+  'Worker online · last update {d}': 'השרת מחובר · עדכון אחרון {d}',
+  'Worker offline since {d}': 'השרת לא מחובר מאז {d}',
+  'Refresh': 'רענן',
+  'Opening Range Breakout · {d}': 'פריצת טווח הפתיחה (ORB) · {d}',
+  'No ORB signals yet today. They arrive at 16:36 Israel time (9:36 New York).': 'עדיין אין אותות ORB היום. הם מגיעים ב-16:36 שעון ישראל (9:36 בניו יורק).',
+  'Waiting for breakout': 'ממתינה לפריצה',
+  'Triggered': 'הופעלה',
+  'Stopped out': 'נעצרה בסטופ',
+  'ORB rule: first 5-minute candle bullish, volume at least its 14-day norm, stop 10% of ATR under entry; the study exits at the close. Target shown at your ratio.': 'כלל ה-ORB: נר 5 הדקות הראשון עולה, מחזור לפחות כמו הממוצע של 14 יום, סטופ 10% מה-ATR מתחת לכניסה. במחקר יוצאים בסגירת היום. היעד מוצג לפי היחס שלך.',
+  'Hot right now': 'חמות עכשיו',
+  'No snapshot yet. Updates every 10 minutes during market hours.': 'עדיין אין נתונים. מתעדכן כל 10 דקות בשעות המסחר.',
+  'Volume': 'מחזור',
+
   // AI analyst
   'AI analyst recommendation': 'המלצת סוכן AI',
   'Claude reviews the data above plus recent news, then recommends using your risk settings': 'Claude בוחן את הנתונים, מחפש חדשות עדכניות וממליץ לפי הגדרות הסיכון שלך',

@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { planPosition } from '../lib/calc'
-import { compact, money, qty, ratio, signedPct } from '../lib/format'
+import { compact, money, qty, ratio, signedPct, times } from '../lib/format'
 import { DEFAULT_FILTERS, evaluate, toBars, type Candidate, type ScanFilters } from '../lib/hotstocks'
 import { useT } from '../lib/i18n'
 import { fetchRanking, fetchScan, type RankResult, type ScanRaw } from '../lib/market'
 import { useStore } from '../lib/store'
+import LiveSignals from '../components/LiveSignals'
 
 const FILTERS_KEY = 'tradepilot-hot-filters'
 const SCAN_KEY = 'tradepilot-hot-scan'
@@ -89,6 +90,8 @@ export default function HotStocks() {
 
   return (
     <div className="stack">
+      <LiveSignals />
+
       <article className="card">
         <div className="card-head">
           <div>
@@ -156,7 +159,7 @@ export default function HotStocks() {
                       {ai && <span className={`bias ${verdictBias[ai.verdict]}`}>{ai.verdict === 'enter' ? t('Enter long') : ai.verdict === 'wait' ? t('Wait for a setup') : t('Avoid')}</span>}
                     </div>
                     <div className="hot-metrics">
-                      <span>{t('Rel. volume')} <b>{c.relVolume ? `${c.relVolume.toFixed(1)}×` : '—'}</b></span>
+                      <span>{t('Rel. volume')} <b>{times(c.relVolume)}</b></span>
                       <span>{t('Avg volume')} <b>{compact(c.avgVolume)}</b></span>
                       <span>RSI <b>{c.rsi?.toFixed(0) ?? '—'}</b></span>
                       <span>{t('3M')} <b>{signedPct(c.perf3m, 1)}</b></span>
@@ -216,7 +219,7 @@ export default function HotStocks() {
                         <td><Link to={`/analyze?s=${c.symbol}`} className="ticker">{c.symbol}</Link></td>
                         <td className="num">{money(c.price)}</td>
                         <td className={`num ${c.changePct >= 0 ? 'positive' : 'negative'}`}>{signedPct(c.changePct)}</td>
-                        <td className="num">{c.relVolume ? `${c.relVolume.toFixed(1)}×` : '—'}</td>
+                        <td className="num">{times(c.relVolume)}</td>
                         <td>{t(fail.key, { v: failValue(fail.key, filters) })} <span className="subtle">({fail.value})</span></td>
                       </tr>
                     )

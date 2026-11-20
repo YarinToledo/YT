@@ -1,0 +1,29 @@
+# TradePilot IBKR worker: IB Gateway (paper, read-only) + the signal worker.
+# Usage on the server:  cp .env.example .env  →  edit .env  →  docker compose up -d --build
+services:
+  ib-gateway:
+    # Community image that runs IB Gateway headless with IBC. Pin a version tag after the first successful run.
+    image: ghcr.io/gnzsnz/ib-gateway:stable
+    restart: always
+    environment:
+      TWS_USERID: ${TWS_USERID}
+      TWS_PASSWORD: ${TWS_PASSWORD}
+      TRADING_MODE: paper
+      READ_ONLY_API: "yes"
+      TIME_ZONE: America/New_York
+      AUTO_RESTART_TIME: "11:59 PM"
+      RELOGIN_AFTER_TWOFA_TIMEOUT: "yes"
+      TWOFA_TIMEOUT_ACTION: restart
+    # No ports are published: the API is reachable only by the worker on the internal Docker network.
+
+  worker:
+    build: .
+    restart: always
+    depends_on:
+      - ib-gateway
+    environment:
+      IB_HOST: ib-gateway
+      IB_PORT: "4004"   # paper API port inside the gnzsnz image (4003 = live)
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      INGEST_SECRET: ${INGEST_SECRET}

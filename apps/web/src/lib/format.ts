@@ -38,3 +38,4 @@ export const compact = (n: number | null | undefined) => {
 export const num2 = (n: number | null | undefined, digits = 2) => (n == null || !isFinite(n) ? '—' : n.toFixed(digits))
 export const signedPct = (n: number | null | undefined, digits = 2) =>
   n == null || !isFinite(n) ? '—' : ltr(`${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n * 100).toFixed(digits)}%`)
+export const times = (n: number | null | undefined, digits = 1) => (n == null || !isFinite(n) ? '—' : ltr(`${n.toFixed(digits)}×`))

@@ -4,7 +4,8 @@ Personal trading journal and risk planner. Trades are entered manually; there is
 
 ```
 apps/web     Vite + React + TypeScript (deploy to Vercel)
-supabase/    SQL migrations (Postgres + Auth + RLS)
+supabase/    SQL migrations (Postgres + Auth + RLS) and Edge Functions
+worker/ibkr  IB Gateway + Python worker for live signals (cloud server)
 design/      original HTML prototype
 ```
 
@@ -61,6 +62,12 @@ The **Hot Stocks** page runs a momentum-swing "stocks in play" screen on end-of-
 + your watchlist, filtered in the browser (`apps/web/src/lib/hotstocks.ts`) for unusual volume, a strong close and an uptrend.
 Each pass gets a buy-stop / stop / target plan at your R:R and risk %. "Rank with AI" asks Claude to check the news behind each
 move and rank them. A scan costs about 2 + N FMP requests (N ≤ 30); the free plan allows 250 a day.
+
+## Live data from Interactive Brokers
+
+`worker/ibkr/` runs IB Gateway (paper account, read-only) and a Python worker on a cloud server. It pushes Opening Range
+Breakout signals and a hot-stocks snapshot through the `ingest` Edge Function into `market_signals`, shown live on the
+Hot Stocks page. Setup: `worker/ibkr/README.md`.
 
 ## Deploy to Vercel
 
