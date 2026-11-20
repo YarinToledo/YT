@@ -14,10 +14,14 @@ create table if not exists market_signals (
 create index if not exists market_signals_day_kind on market_signals (trading_day desc, kind, created_at desc);
 -- One ORB signal per symbol per day (re-sends update it). Snapshot/heartbeat rows have a null symbol,
 -- and nulls never collide, so those still append.
-alter table market_signals add constraint market_signals_kind_day_symbol unique (kind, trading_day, symbol);
+do $$ begin
+  alter table market_signals add constraint market_signals_kind_day_symbol unique (kind, trading_day, symbol);
+exception when duplicate_table or duplicate_object then null;  -- already there (re-run)
+end $$;
 
 alter table market_signals enable row level security;
 
+drop policy if exists "signed-in users read signals" on market_signals;
 create policy "signed-in users read signals" on market_signals for select
   to authenticated using (true);
 -- No insert/update/delete policies: only the service role (ingest function) writes.
