@@ -20,7 +20,7 @@ export function Brand() {
   const t = useT()
   return (
     <div className="brand">
-      <div className="brand-mark">T</div>
+      <img className="brand-mark" src="/logo-mark.png" alt="" width="40" height="40" />
       <div><div className="brand-name">TRADEPILOT</div><div className="brand-sub">{t('PERSONAL TRADING DESK')}</div></div>
     </div>
   )
