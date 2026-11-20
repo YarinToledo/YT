@@ -17,6 +17,11 @@ if [ ! -f .env ]; then
   exit 1
 fi
 
+if pgrep -f "python -u worker.py" >/dev/null 2>&1; then
+  echo "The worker is already running (another terminal). Only one copy can connect to TWS; stop it first with Ctrl+C there." >&2
+  exit 1
+fi
+
 [ -d .venv ] || "$PY" -m venv .venv
 .venv/bin/pip install -q --disable-pip-version-check -r requirements.txt
 exec caffeinate -i .venv/bin/python -u worker.py
