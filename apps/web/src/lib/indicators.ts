@@ -166,15 +166,20 @@ export function technicals(bars: Bar[]): Technicals | null {
 
 /**
  * A long-side scenario for the trade planner: entry at last price, stop below support
- * (or 2×ATR), target at resistance, but never less than 2R. Returns null if it can't be built.
+ * (or 2×ATR), target at `rr` × risk (the user's reward:risk setting). Returns null if it can't be built.
  */
-export function longScenario(t: Technicals) {
+export function longScenario(t: Technicals, rr = 2) {
   const a = t.atr ?? t.price * 0.02
   const stopFromSupport = t.support != null ? t.support - 0.5 * a : null
   const stop = stopFromSupport != null && stopFromSupport < t.price && t.price - stopFromSupport <= 4 * a ? stopFromSupport : t.price - 2 * a
   const risk = t.price - stop
   if (!(risk > 0) || stop <= 0) return null
-  const target = Math.max(t.resistance ?? 0, t.price + 2 * risk)
+  const target = t.price + rr * risk
   const r2 = (n: number) => Math.round(n * 100) / 100
-  return { entry: r2(t.price), stop: r2(stop), target: r2(target), rr: (target - t.price) / risk }
+  return {
+    entry: r2(t.price), stop: r2(stop), target: r2(target), rr,
+    stopAtSupport: stop !== t.price - 2 * a,
+    /** Nearest resistance sits between entry and target: price must break it to reach the target. */
+    resistanceInWay: t.resistance != null && t.resistance > t.price && t.resistance < target ? t.resistance : null,
+  }
 }

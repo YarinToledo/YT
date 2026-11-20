@@ -3,9 +3,11 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useT, type T } from '../lib/i18n'
 import { useStore } from '../lib/store'
 import { fetchMarketData, type Fundamentals, type MarketData } from '../lib/market'
+import { planPosition } from '../lib/calc'
 import { longScenario, sma, technicals, type Bar, type Bias, type Technicals } from '../lib/indicators'
-import { compact, money, num2, pct, signedPct, ratio, shortDate, tone } from '../lib/format'
+import { compact, qty, money, num2, pct, signedPct, ratio, shortDate, tone } from '../lib/format'
 import { normalizeSymbol } from '../lib/validate'
+import AiAnalystCard from '../components/AiAnalystCard'
 
 const SYMBOL_RE = /^[A-Z0-9.\-]{1,12}$/
 
@@ -149,7 +151,7 @@ function FundamentalCard({ data, t }: { data: MarketData; t: T }) {
 
 export default function Analyze() {
   const t = useT()
-  const { watchlist, addWatch } = useStore()
+  const { watchlist, addWatch, settings, usage } = useStore()
   const [params, setParams] = useSearchParams()
   const current = params.get('s')
   const [input, setInput] = useState(current ?? '')
@@ -174,9 +176,35 @@ export default function Analyze() {
 
   const data = state.data
   const tech = useMemo(() => (data ? technicals(data.bars) : null), [data])
-  const scenario = tech ? longScenario(tech) : null
+  const scenario = tech ? longScenario(tech, settings.min_reward_risk > 0 ? settings.min_reward_risk : 2) : null
+  const sized = scenario ? planPosition({ direction: 'LONG', entry: scenario.entry, stop: scenario.stop, target: scenario.target, equity: usage.equity, riskPct: settings.risk_per_trade_pct, fractional: settings.fractional_shares }) : null
   const p = data?.profile
   const price = p?.price ?? tech?.price ?? null
+  // Compact, rounded snapshot of everything above, sent to the AI analyst.
+  const aiContext = useMemo(() => {
+    if (!data) return null
+    const r = (n: number | null | undefined, d = 2) => (n == null || !isFinite(n) ? null : Math.round(n * 10 ** d) / 10 ** d)
+    const lastBars = data.bars.slice(-30).map(b => ({ d: b.date, c: r(b.close), v: Math.round(b.volume) }))
+    return {
+      profile: data.profile && { ...data.profile, description: data.profile.description?.slice(0, 1500) ?? null, image: undefined },
+      technicals: tech && {
+        price: r(tech.price), sma20: r(tech.sma20), sma50: r(tech.sma50), sma200: r(tech.sma200), rsi14: r(tech.rsi, 1),
+        macd: tech.macd && { macd: r(tech.macd.macd, 3), signal: r(tech.macd.signal, 3), crossedUp: tech.macd.crossedUp, crossedDown: tech.macd.crossedDown },
+        atr14: r(tech.atr), high52: r(tech.high52), low52: r(tech.low52), support: r(tech.support), resistance: r(tech.resistance),
+        perf: { m1: r(tech.perf.m1, 4), m3: r(tech.perf.m3, 4), m6: r(tech.perf.m6, 4), y1: r(tech.perf.y1, 4) },
+        trend: tech.trend, volumeVs50dAvg: r(tech.volRatio), signals: tech.signals.map(s => ({ signal: s.key, vars: s.vars, bias: s.bias })), bias: tech.bias,
+      },
+      last30Days: lastBars,
+      fundamentals: data.fundamentals,
+      annual: data.years,
+      peers: data.peers,
+      appScenario: scenario,
+      trader: {
+        equityUsd: r(usage.equity), riskPerTradePct: settings.risk_per_trade_pct, rewardRiskRatio: settings.min_reward_risk,
+        riskBudgetUsd: r(usage.riskPerTrade), fractionalShares: settings.fractional_shares, longOnly: true,
+      },
+    }
+  }, [data, tech, scenario, settings, usage])
   const inWatchlist = data ? watchlist.some(w => w.symbol === data.symbol) : false
 
   return (
@@ -221,6 +249,8 @@ export default function Analyze() {
             {data.bars.length > 1 ? <div style={{ marginTop: 16 }}><PriceChart bars={data.bars} /></div> : <div className="empty">{t('No price history available.')}</div>}
           </article>
 
+          <AiAnalystCard symbol={data.symbol} context={aiContext} onAnalyze={s => setParams({ s })} />
+
           <section className="grid two-col">
             {tech ? <TechnicalCard tech={tech} t={t} /> : <article className="card"><div className="card-title">{t('Technical analysis')}</div><div className="empty">{t('Not enough price history for technical analysis.')}</div></article>}
             <FundamentalCard data={data} t={t} />
@@ -229,14 +259,17 @@ export default function Analyze() {
           {scenario && tech && (
             <article className="card">
               <div className="card-head">
-                <div><div className="card-title">{t('Trade scenario (long)')}</div><div className="subtle">{t('Stop under nearest support (or 2×ATR), target at resistance and at least 2R')}</div></div>
+                <div><div className="card-title">{t('Trade scenario (long)')}</div><div className="subtle">{t('Stop under nearest support (or 2×ATR) · target at your {rr} ratio · risk {p}% of equity', { rr: ratio(scenario.rr), p: settings.risk_per_trade_pct })}</div></div>
               </div>
               <div className="perf-row">
                 <div><span>{t('Entry')}</span><b>{money(scenario.entry)}</b></div>
                 <div><span>{t('Stop loss')}</span><b className="negative">{money(scenario.stop)}</b></div>
                 <div><span>{t('Target')}</span><b className="positive">{money(scenario.target)}</b></div>
                 <div><span>{t('R:R')}</span><b>{ratio(scenario.rr)}</b></div>
+                {sized?.ok && <div><span>{t('Position size:')}</span><b>{t('{n} shares', { n: qty(sized.quantity) })}</b></div>}
+                {sized?.ok && <div><span>{t('Risk:')}</span><b className="negative">{money(sized.riskAmount)}</b></div>}
               </div>
+              {scenario.resistanceInWay != null && <div className="warning" style={{ marginTop: 12 }}>{t('Resistance at {v} sits before the target; price has to break it.', { v: money(scenario.resistanceInWay) })}</div>}
               {tech.bias === 'bearish' && <div className="warning" style={{ marginTop: 12 }}>{t('The technical picture is bearish. A long trade here goes against the trend.')}</div>}
               <div className="btn-row" style={{ marginTop: 14 }}>
                 <Link className="btn" style={{ textDecoration: 'none' }} to={`/?symbol=${encodeURIComponent(data.symbol)}&entry=${scenario.entry}&stop=${scenario.stop}&target=${scenario.target}`}>{t('Send to trade planner')}</Link>

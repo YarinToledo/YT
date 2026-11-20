@@ -1,7 +1,10 @@
 // Supabase Edge Function: market-data
-// Proxies Financial Modeling Prep so the API key never reaches the browser.
-// Secret required: FMP_API_KEY (Edge Functions → Secrets).
+// Proxies Financial Modeling Prep so the API key never reaches the browser, and runs the
+// AI analyst (Claude) on the data the app already computed.
+// Secrets: FMP_API_KEY (market data), ANTHROPIC_API_KEY (AI analyst, optional).
 // Only signed-in users of this project can call it (the anon key alone is rejected).
+
+import Anthropic from 'npm:@anthropic-ai/sdk@1.11.0'
 
 const FMP = 'https://financialmodelingprep.com/stable'
 
@@ -23,15 +26,140 @@ async function signedInUser(req: Request): Promise<boolean> {
   return r.ok
 }
 
+// ---------------------------------------------------------------------------
+// AI analyst
+// ---------------------------------------------------------------------------
+
+const AI_SYSTEM = `You are a seasoned equity analyst helping a single retail swing trader review one US stock.
+You receive JSON the app computed from market data: company profile, technical indicators and signals,
+fundamental ratios, annual results, peers, and the trader's own risk settings (risk per trade %, reward:risk ratio, equity).
+
+Your job:
+1. Use web search (a few queries at most) for what the data cannot show: what the business does today, recent news,
+   earnings, guidance, catalysts, and which stocks move with it (competitors, suppliers, customers, sector ETFs).
+2. Weigh the technical picture, the fundamentals and the news together and give a clear view: enter a long now,
+   wait for a better setup, or avoid. Say why, with the strongest reasons on both sides. Be candid when the evidence is mixed.
+3. Propose a concrete trade plan. The trader only goes long. Use the trader's reward:risk ratio exactly:
+   target = entry + ratio × (entry − stop). Put the stop at a level that invalidates the idea (under support, or ~2×ATR),
+   not an arbitrary percentage. If the right call is to wait, give the entry trigger level to wait for (for example a
+   breakout above resistance or a pullback to support) and still fill entry/stop/target for that trigger.
+   If the right call is to avoid, set entry, stop and target to null.
+4. List the key risks and upcoming catalysts.
+
+Write every text field in Hebrew, plainly, for a trader who knows the basics. Keep tickers, numbers and indicator names
+(RSI, MACD, P/E) as they are. Prices are in USD. This is decision support for the trader's own decision; do not hedge
+every sentence, but do not overstate certainty either.
+
+When you are done, call the submit_analysis tool exactly once with your final answer. Do not write the answer as text.`
+
+const SUBMIT_TOOL = {
+  name: 'submit_analysis',
+  description: 'Submit the final analysis and trade recommendation for the stock. Call exactly once, at the end.',
+  strict: true,
+  input_schema: {
+    type: 'object',
+    additionalProperties: false,
+    required: ['verdict', 'confidence', 'headline', 'summary', 'reasons_for', 'reasons_against', 'business', 'news', 'related', 'trade', 'risks', 'catalysts'],
+    properties: {
+      verdict: { type: 'string', enum: ['enter', 'wait', 'avoid'], description: 'enter = go long now, wait = wait for the trigger in trade, avoid = no trade' },
+      confidence: { type: 'string', enum: ['low', 'medium', 'high'] },
+      headline: { type: 'string', description: 'One sentence, Hebrew: the recommendation and the main reason.' },
+      summary: { type: 'string', description: 'Hebrew, 3-5 sentences: why this recommendation, combining technicals, fundamentals and news.' },
+      reasons_for: { type: 'array', items: { type: 'string' }, description: 'Hebrew bullet points supporting a long.' },
+      reasons_against: { type: 'array', items: { type: 'string' }, description: 'Hebrew bullet points against a long.' },
+      business: { type: 'string', description: 'Hebrew, 2-4 sentences: what the company does, how it makes money, its position.' },
+      news: { type: 'array', items: { type: 'string' }, description: 'Hebrew, recent relevant news items with approximate dates.' },
+      related: {
+        type: 'array',
+        items: {
+          type: 'object', additionalProperties: false, required: ['symbol', 'relation'],
+          properties: { symbol: { type: 'string' }, relation: { type: 'string', description: 'Hebrew: how it relates (competitor, supplier, customer, sector ETF) and how it tends to move with this stock.' } },
+        },
+      },
+      trade: {
+        type: 'object', additionalProperties: false, required: ['entry', 'stop', 'target', 'trigger', 'rationale'],
+        properties: {
+          entry: { type: ['number', 'null'] },
+          stop: { type: ['number', 'null'] },
+          target: { type: ['number', 'null'] },
+          trigger: { type: 'string', description: 'Hebrew: the condition for entering (e.g. "close above 182").' },
+          rationale: { type: 'string', description: 'Hebrew: why these levels.' },
+        },
+      },
+      risks: { type: 'array', items: { type: 'string' } },
+      catalysts: { type: 'array', items: { type: 'string' } },
+    },
+  },
+}
+
+async function runAnalyst(symbol: string, context: unknown) {
+  const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
+  if (!apiKey) return json({ error: 'ANTHROPIC_API_KEY secret is not set in Supabase' }, 500)
+  const ctx = JSON.stringify(context ?? {})
+  if (ctx.length > 40_000) return json({ error: 'Context too large' }, 400)
+
+  const client = new Anthropic({ apiKey })
+  // deno-lint-ignore no-explicit-any
+  const messages: any[] = [{
+    role: 'user',
+    content: `Analyze ${symbol}. Today is ${new Date().toISOString().slice(0, 10)}.\n\nData from the app (JSON):\n${ctx}`,
+  }]
+  // deno-lint-ignore no-explicit-any
+  let response: any = null
+  for (let i = 0; i < 4; i++) {
+    // deno-lint-ignore no-explicit-any
+    response = await (client.beta.messages.create as any)({
+      model: 'claude-opus-5-5',
+      max_tokens: 16000,
+      betas: ['server-side-fallback-2026-07-01'],
+      fallbacks: 'default', // re-run on a fallback model if the request is declined
+      output_config: { effort: 'medium' },
+      system: AI_SYSTEM,
+      tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 4 }, SUBMIT_TOOL],
+      messages,
+    })
+    // Server-side search loop paused: resend with the partial turn and the API resumes.
+    if (response.stop_reason === 'pause_turn') {
+      messages.push({ role: 'assistant', content: response.content })
+      continue
+    }
+    break
+  }
+
+  if (response?.stop_reason === 'refusal') return json({ error: 'The AI declined this request' }, 502)
+  // deno-lint-ignore no-explicit-any
+  const call = response?.content?.find((b: any) => b.type === 'tool_use' && b.name === 'submit_analysis')
+  if (!call) return json({ error: `The AI did not return an analysis (stop: ${response?.stop_reason ?? 'unknown'})` }, 502)
+  // deno-lint-ignore no-explicit-any
+  const sources = (response.content as any[])
+    .filter(b => b.type === 'web_search_tool_result' && Array.isArray(b.content))
+    // deno-lint-ignore no-explicit-any
+    .flatMap(b => b.content.map((r: any) => ({ title: r.title, url: r.url })))
+    .slice(0, 8)
+  return json({ symbol, model: response.model, generatedAt: new Date().toISOString(), analysis: call.input, sources })
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   if (req.method !== 'POST') return json({ error: 'Use POST' }, 405)
   if (!(await signedInUser(req))) return json({ error: 'Sign in required' }, 401)
 
+  const body = await req.json().catch(() => ({}))
+
+  // AI mode: { ai: { symbol, context } } → Claude's recommendation (does not use FMP).
+  if (body?.ai) {
+    const sym = String(body.ai.symbol ?? '').trim().toUpperCase()
+    if (!/^[A-Z0-9.\-]{1,12}$/.test(sym)) return json({ error: 'Invalid symbol' }, 400)
+    try {
+      return await runAnalyst(sym, body.ai.context)
+    } catch (e) {
+      const status = (e as { status?: number }).status
+      return json({ error: `AI request failed${status ? ` (${status})` : ''}: ${String((e as Error).message ?? e).slice(0, 300)}` }, 502)
+    }
+  }
+
   const key = Deno.env.get('FMP_API_KEY')
   if (!key) return json({ error: 'FMP_API_KEY secret is not set in Supabase' }, 500)
-
-  const body = await req.json().catch(() => ({}))
 
   // Quotes mode: { symbols: [...] } → latest price and daily change for each (used by the watchlist).
   if (Array.isArray(body?.symbols)) {

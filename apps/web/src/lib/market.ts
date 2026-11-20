@@ -142,3 +142,32 @@ export async function fetchQuotes(symbols: string[]): Promise<Record<string, Quo
   const toNum = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : null)
   return Object.fromEntries(data.quotes.map(q => [q.symbol, { ...q, price: toNum(q.price), change: toNum(q.change), changePct: toNum(q.changePct) }]))
 }
+
+export interface AiAnalysis {
+  verdict: 'enter' | 'wait' | 'avoid'
+  confidence: 'low' | 'medium' | 'high'
+  headline: string
+  summary: string
+  reasons_for: string[]
+  reasons_against: string[]
+  business: string
+  news: string[]
+  related: { symbol: string; relation: string }[]
+  trade: { entry: number | null; stop: number | null; target: number | null; trigger: string; rationale: string }
+  risks: string[]
+  catalysts: string[]
+}
+export interface AiResult { symbol: string; model: string; generatedAt: string; analysis: AiAnalysis; sources: { title: string; url: string }[] }
+
+/** Ask the AI analyst (Claude, via the market-data function) for a recommendation. Costs a few cents per call. */
+export async function fetchAiAnalysis(symbol: string, context: unknown): Promise<AiResult> {
+  if (isDemo || !supabase) throw new Error('Stock analysis needs the Supabase connection (it is not available in demo mode).')
+  const { data, error } = await supabase.functions.invoke<AiResult & { error?: string }>('market-data', { body: { ai: { symbol, context } } })
+  if (error) {
+    let msg = error.message
+    try { const body = await (error as { context?: Response }).context?.json(); if (body?.error) msg = body.error } catch { /* ignore */ }
+    throw new Error(msg)
+  }
+  if (!data || data.error || !data.analysis) throw new Error(data?.error ?? 'Empty response')
+  return data
+}

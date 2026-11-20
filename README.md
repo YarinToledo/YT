@@ -49,6 +49,10 @@ The **Stock Analysis** page calls the `market-data` Edge Function, which proxies
 3. Deploy `supabase/functions/market-data/index.ts` (Dashboard → Edge Functions → Deploy a new function → Via Editor, name `market-data`),
    or `npx supabase functions deploy market-data --project-ref <ref>`.
 
+The **AI analyst** on that page uses the same function with a second secret, `ANTHROPIC_API_KEY` (console.anthropic.com).
+It sends Claude the computed data plus your risk settings; Claude adds web search for news and returns a recommendation
+and a trade plan. Each run costs a few cents.
+
 Indicators (SMA, RSI, MACD, ATR, support/resistance) are computed in the browser in `apps/web/src/lib/indicators.ts`.
 
 ## Deploy to Vercel

@@ -184,6 +184,21 @@ td.num,th.num{text-align:end}
 .swatch.price{background:var(--gold)}.swatch.ma50{background:var(--blue)}.swatch.ma200{background:#b07cc6}
 .description{font-size:12px;color:#aab5c0;line-height:1.7;margin:14px 0 0;text-align:left}
 
+/* AI analyst */
+.ai-card{border-color:#5d4c30}
+.ai-body{margin-top:4px}
+.ai-verdict{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+.ai-verdict .bias{font-size:13px;padding:6px 14px}
+.ai-headline{font-size:15px;font-weight:650;margin:6px 0}
+.ai-text{font-size:13px;color:#c3ccd5;line-height:1.75;margin:6px 0 12px}
+.ai-sub{font-size:11px;font-weight:700;letter-spacing:.4px;color:var(--gold);margin:14px 0 6px}
+.ai-sub.positive{color:var(--green)}.ai-sub.negative{color:var(--red)}
+.ai-grid{margin-top:4px}
+.ai-related{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;font-size:12px;color:#c3ccd5}
+.ai-related li{display:flex;gap:8px;align-items:baseline}
+.ai-sources{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:14px;font-size:11px}
+.ai-sources a{color:var(--blue)}
+
 /* Language toggle + RTL */
 .lang-toggle{background:transparent;border:1px solid var(--line);color:var(--gold);border-radius:8px;padding:6px 9px;font-size:11px;font-weight:700;min-width:38px}
 .lang-toggle:hover{border-color:#8d754e}

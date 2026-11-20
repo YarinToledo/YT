@@ -64,10 +64,11 @@ describe('technicals + scenario', () => {
     const t = technicals(bars(up))!
     expect(t.trend).toBe('up')
     expect(t.bias).toBe('bullish')
-    const s = longScenario(t)!
+    const s = longScenario(t, 3)!
     expect(s.stop).toBeLessThan(s.entry)
     expect(s.target).toBeGreaterThan(s.entry)
-    expect(s.rr).toBeGreaterThanOrEqual(2 - 1e-9)
+    // target honours the requested reward:risk (within rounding)
+    expect((s.target - s.entry) / (s.entry - s.stop)).toBeCloseTo(3, 1)
   })
   it('reads a steady downtrend as bearish', () => {
     const down = Array.from({ length: 260 }, (_, i) => 150 - i * 0.2 + Math.sin(i / 3))
