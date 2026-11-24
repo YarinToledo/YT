@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { RESEARCH_HE } from './research/he'
 
 export type Lang = 'en' | 'he'
 const KEY = 'tradepilot-lang'
@@ -8,6 +9,7 @@ const KEY = 'tradepilot-lang'
  * Placeholders use {name}.
  */
 const HE: Record<string, string> = {
+  ...RESEARCH_HE,
   // Navigation / layout
   'Overview': 'סקירה',
   'Portfolio Overview': 'סקירת תיק',

@@ -12,6 +12,7 @@ export const PAGES = [
   { path: '/watch', label: 'Market Watch', title: 'Market Watch', ico: 'watch', group: 'WORKSPACE' },
   { path: '/hot', label: 'Hot Stocks', title: 'Hot Stocks', ico: 'hot', group: 'WORKSPACE' },
   { path: '/analyze', label: 'Stock Analysis', title: 'Stock Analysis', ico: 'analyze', group: 'WORKSPACE' },
+  { path: '/research', label: 'Research', title: 'Company Research', ico: 'research', group: 'WORKSPACE' },
   { path: '/risk', label: 'Risk Management', title: 'Risk Management', ico: 'risk', group: 'MANAGEMENT' },
   { path: '/analytics', label: 'Analytics', title: 'Analytics', ico: 'analytics', group: 'MANAGEMENT' },
   { path: '/settings', label: 'Settings', title: 'Settings', ico: 'settings', group: 'MANAGEMENT' },
