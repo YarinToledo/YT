@@ -201,6 +201,18 @@ export const RESEARCH_HE: Record<string, string> = {
   'Save as draft': 'שמור כטיוטה',
   'Activate new version': 'הפעל גרסה חדשה',
 
+  // share count
+  'Number of shares': 'כמות מניות',
+  'how many you buy': 'כמה אתה קונה',
+  'Position cost: {n} × ${p} = ${c}': 'עלות הפוזיציה: {n} × ${p} = ${c}',
+  'From the number of shares × price': 'לפי כמות המניות × המחיר',
+  'Your position': 'הפוזיציה שלך',
+  '{n} shares': '{n} מניות',
+  'Loss if the stop is hit: ${r}{pct}, before fees and slippage.': 'הפסד אם הסטופ נפגע: ${r}{pct}, לפני עמלות והחלקה.',
+  'of the portfolio': 'מהתיק',
+  'More than the {n} shares your risk policy allows.': 'יותר מ־{n} המניות שמדיניות הסיכון שלך מאפשרת.',
+  'Share count is within the risk-based size cap': 'כמות המניות בתוך תקרת הגודל לפי הסיכון',
+
   // backup
   'Backup': 'גיבוי',
   'Research is saved to your account. Move a backup from the standalone research app here, or export a copy.': 'המחקר נשמר בחשבון שלך. אפשר להעביר לכאן גיבוי מאפליקציית המחקר הנפרדת, או לייצא עותק.',

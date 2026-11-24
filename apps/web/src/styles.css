@@ -244,6 +244,8 @@ td.num,th.num{text-align:end}
 .facts-note{margin-top:10px;font-size:11px}.facts-note p{margin:4px 0}
 .metric-feature{margin:14px 0;padding:12px;border:1px solid var(--line);border-radius:10px}
 .metric-feature small{color:var(--muted);font-size:11px}.metric-feature strong{display:block;font-size:26px;margin:4px 0}.metric-feature p{margin:0;color:#687685;font-size:11px}
+.position-line{display:flex;flex-direction:column;gap:3px;margin:12px 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.position-line span{color:var(--muted);font-size:11px}.position-line b{font-size:16px}.position-line small{font-size:11px;color:var(--muted)}.position-line small.negative{color:var(--red)}
 .check-list{list-style:none;padding:0;margin:10px 0;display:grid;gap:6px;font-size:13px}
 .decision-card p{margin:8px 0}
 .decision-card details{margin:8px 0}.decision-card summary{cursor:pointer;color:var(--gold);font-size:12px}

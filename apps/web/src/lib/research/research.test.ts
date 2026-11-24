@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { normalizeCompany, normalizeFmpQuote, pickFact, searchCompanies } from '../../../../../supabase/functions/_shared/sec'
-import { applyCompany, assess, blankDraft, defaultPolicy, safeUrl, toLocalInput, wouldReplace, type Draft, type Policy } from './engine'
+import { applyCompany, assess, blankDraft, defaultPolicy, safeUrl, toLocalInput, validDraft, withDefaults, wouldReplace, type Draft, type Policy } from './engine'
 import { memoryApi, parseBackup } from './api'
 
 // ---------------------------------------------------------------- SEC data (ported from the module's tests)
@@ -80,6 +80,24 @@ describe('assess', () => {
     expect(assess({ ...input, mode: 'trade', stop: '55', target: '75' }, { ...policy, status: 'draft' }, now).units).toBeNull()
     expect(assess({ ...input, mode: 'trade', stop: '70', target: '75' }, policy, now).rr).toBeNull()
     expect(assess({ ...input, asOf: '2027-01-01' }, policy, now).complete).toBe(false)
+  })
+  it('share count sets the cost, the exposure and the loss to the stop', () => {
+    const inv = assess({ ...input, shares: '1', budget: '' }, policy, now)
+    expect(inv.cost).toBe(60); expect(inv.exposure).toBe(6)
+    const trade = { ...input, mode: 'trade' as const, price: '100', stop: '95', target: '115' }
+    const ok = assess({ ...trade, shares: '3' }, policy, now)
+    expect(ok.sharesRisk).toBe(15); expect(ok.units).toBe(3)
+    expect(ok.checks.find(c => c.label.startsWith('Share count'))?.ok).toBe(true)
+    const big = assess({ ...trade, shares: '5', portfolio: '10000' }, policy, now)
+    expect(big.units).toBe(30); expect(big.checks.find(c => c.label.startsWith('Share count'))?.ok).toBe(true)
+    const over = assess({ ...trade, shares: '9' }, policy, now)
+    expect(over.complete).toBe(false)
+    expect(over.checks.find(c => c.label.startsWith('Share count'))?.ok).toBe(false)
+  })
+  it('older drafts without a share count still load', () => {
+    const { shares: _drop, ...old } = blankDraft()
+    expect(validDraft(old)).toBe(true)
+    expect(withDefaults(old as Draft).shares).toBe('')
   })
   it('missing, zero and unsafe inputs cannot produce valid outputs', () => {
     expect(assess({ ...input, price: '0' }, policy, now).margin).toBeNull()

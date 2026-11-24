@@ -4,7 +4,7 @@
  */
 import { isDemo, supabase } from '../data'
 import {
-  blankDraft, defaultPolicy, validDraft, validPolicy, DECISIONS,
+  blankDraft, defaultPolicy, validDraft, validPolicy, withDefaults, DECISIONS,
   type Assessment, type CompanyData, type DecisionKind, type Draft, type Policy, type Quote,
 } from './engine'
 
@@ -78,7 +78,7 @@ function supabaseApi(): ResearchApi {
       const draft = (draftRow as any)?.draft
       const policy = policyRow ? { ...(policyRow as any).data, version: (policyRow as any).version, status: (policyRow as any).status } : null
       return {
-        draft: validDraft(draft) ? draft : blankDraft(),
+        draft: validDraft(draft) ? withDefaults(draft) : blankDraft(),
         rules: (draftRow as any)?.rules ?? {},
         policy: validPolicy(policy) ? policy : defaultPolicy(),
         decisions: ((decisions ?? []) as any[]).map(r => toDecision(r, byDecision.get(r.id))),
@@ -176,5 +176,5 @@ export function parseBackup(text: string): ParsedBackup {
       reviews: r.reviews.filter((x: any) => typeof x?.note === 'string').map((x: any, i: number) => ({ id: `${r.id}-${i}`, createdAt: String(x.createdAt), note: x.note.slice(0, 16000) })),
     }
   })
-  return { draft: s.draft, rules, policy: s.policy, decisions }
+  return { draft: withDefaults(s.draft), rules, policy: s.policy, decisions }
 }

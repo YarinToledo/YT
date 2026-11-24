@@ -4,7 +4,7 @@ import { compact, num2 } from '../lib/format'
 import { useLang, useT } from '../lib/i18n'
 import { useStore } from '../lib/store'
 import {
-  applyCompany, assess, blankDraft, safeUrl, wouldReplace, DECISION_LABEL, DECISIONS,
+  applyCompany, assess, blankDraft, positive, safeUrl, withDefaults, wouldReplace, DECISION_LABEL, DECISIONS,
   type Assessment, type DecisionKind, type Draft, type Fact, type Policy,
 } from '../lib/research/engine'
 import { loadCompany, parseBackup, researchApi, searchCompany, type CompanyHit, type Decision } from '../lib/research/api'
@@ -17,6 +17,8 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'principles', label: 'Principles' },
   { id: 'policy', label: 'Investment policy' },
 ]
+
+const money2 = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 2 })
 
 const METRIC_LABEL: Record<string, string> = {
   revenue: 'Annual revenue', netIncome: 'Annual net income', operatingCash: 'Operating cash flow (annual)',
@@ -40,7 +42,7 @@ export default function Research() {
   useEffect(() => {
     researchApi.load()
       .then(s => {
-        setDraft(s.draft); setRules(s.rules); setDecisions(s.decisions)
+        setDraft(withDefaults(s.draft)); setRules(s.rules); setDecisions(s.decisions)
         // No saved policy yet: start the draft from the risk settings already used for trading.
         const fresh = s.policy.version === 1 && s.policy.status === 'draft' && !s.policy.updatedAt
         setPolicy(fresh ? { ...s.policy, risk: settings.risk_per_trade_pct, rr: settings.min_reward_risk, daily: settings.daily_loss_limit_pct, weekly: settings.weekly_loss_limit_pct, open: settings.max_open_positions } : s.policy)
@@ -154,6 +156,10 @@ function ResearchTab({ draft, setDraft, policy, onSaved }: { draft: Draft; setDr
           {field('company', 'Company name', { maxLength: 120 })}
           {field('horizon', 'Decision horizon', { placeholder: t('e.g. 5 years') })}
           {field('price', 'Price per share ($)', { ...num, placeholder: t('not entered') })}
+          {field('shares', 'Number of shares', { ...num, placeholder: t('how many you buy') })}
+          {positive(draft.shares) != null && positive(draft.price) != null && (
+            <div className="field full"><div className="hint">{t('Position cost: {n} × ${p} = ${c}', { n: draft.shares, p: draft.price, c: money2(Number(draft.shares) * Number(draft.price)) })}</div></div>
+          )}
           {field('asOf', 'Date of the price and data', { type: 'datetime-local', dir: 'ltr' })}
           {draft.mode === 'investment' ? (
             <>
@@ -179,7 +185,9 @@ function ResearchTab({ draft, setDraft, policy, onSaved }: { draft: Draft; setDr
             <div className="form-grid" style={{ marginTop: 10 }}>
               {field('portfolio', 'Portfolio value ($)', num)}
               {field('holding', 'Existing direct holding ($)', num)}
-              {field('budget', 'Amount considered ($)', num)}
+              {positive(draft.shares) != null && positive(draft.price) != null
+                ? <div className="field"><label>{t('Amount considered ($)')}</label><input value={money2(Number(draft.shares) * Number(draft.price))} disabled dir="ltr" /><div className="hint">{t('From the number of shares × price')}</div></div>
+                : field('budget', 'Amount considered ($)', num)}
             </div>
           </details>
           <div className="form-actions field full"><button className="btn" type="submit">{t('Check the decision framework')}</button></div>
@@ -361,6 +369,14 @@ function AssessmentCard({ draft, result, saving, onSave }: { draft: Draft; resul
           <p>{t('From the entry, stop and target you entered.')}</p>
         </div>
       )}
+      {a.shares != null && (
+        <div className="position-line">
+          <span>{t('Your position')}</span>
+          <b>{t('{n} shares', { n: a.shares })}{a.cost != null ? <> · <span dir="ltr">${money2(a.cost)}</span></> : null}</b>
+          {a.sharesRisk != null && <small>{t('Loss if the stop is hit: ${r}{pct}, before fees and slippage.', { r: money2(a.sharesRisk), pct: positive(draft.portfolio) ? ` (${num2((a.sharesRisk / Number(draft.portfolio)) * 100)}% ${t('of the portfolio')})` : '' })}</small>}
+          {draft.mode === 'trade' && a.units != null && a.shares > a.units && <small className="negative">{t('More than the {n} shares your risk policy allows.', { n: a.units })}</small>}
+        </div>
+      )}
       <ul className="check-list">
         {a.checks.map(c => <li key={c.label}><span className={c.ok ? 'positive' : 'subtle'}>{c.ok ? '✓' : '○'}</span> {t(c.label)}</li>)}
       </ul>
@@ -452,6 +468,7 @@ function DecisionCard({ r, day, onReview }: { r: Decision; day: (v: string | nul
         <summary>{t('Snapshot at decision time')}</summary>
         <dl className="snapshot">
           <dt>{t('Price entered')}</dt><dd dir="ltr">{d.price ? `$${d.price}` : '—'}</dd>
+          {d.shares ? <><dt>{t('Number of shares')}</dt><dd dir="ltr">{d.shares}{a.cost != null ? ` · $${money2(a.cost)}` : ''}</dd></> : null}
           <dt>{t('Data date')}</dt><dd>{d.asOf ? new Date(d.asOf).toLocaleString() : '—'}</dd>
           <dt>{t('Decision horizon')}</dt><dd>{d.horizon || '—'}</dd>
           <dt>{t('Thesis')}</dt><dd>{d.thesis || '—'}</dd>

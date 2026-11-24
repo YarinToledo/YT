@@ -15,6 +15,7 @@ export interface Draft {
   bear: string; base: string; bull: string; valuationNotes: string
   stop: string; target: string
   thesis: string; counter: string; invalidation: string; sources: string
+  shares: string
   portfolio: string; holding: string; budget: string
   companyData: CompanyData | null
   quote: Quote | null
@@ -34,12 +35,14 @@ export interface Check { label: string; ok: boolean }
 export interface Assessment {
   checks: Check[]; complete: boolean
   margin: number | null; rr: number | null; units: number | null; plannedRisk: number | null; exposure: number | null
+  /** Share count entered, its cost at the entered price, and the loss to the stop for that count (older records lack these). */
+  shares?: number | null; cost?: number | null; sharesRisk?: number | null
   sources: string[]; scope: 'manual-framework-v1'
 }
 
 export const blankDraft = (): Draft => ({
   mode: 'investment', ticker: '', company: '', horizon: '', price: '', asOf: '', bear: '', base: '', bull: '', valuationNotes: '',
-  stop: '', target: '', thesis: '', counter: '', invalidation: '', sources: '', portfolio: '', holding: '', budget: '',
+  stop: '', target: '', thesis: '', counter: '', invalidation: '', sources: '', shares: '', portfolio: '', holding: '', budget: '',
   companyData: null, quote: null, isDemo: false,
 })
 
@@ -54,7 +57,10 @@ export function safeUrl(v: string): string | null {
 export function assess(d: Draft, policy: Policy, now = Date.now()): Assessment {
   const price = positive(d.price), bear = positive(d.bear), base = positive(d.base), bull = positive(d.bull)
   const stop = positive(d.stop), target = positive(d.target)
-  const portfolio = positive(d.portfolio), holding = nonnegative(d.holding), budget = nonnegative(d.budget)
+  const shares = positive(d.shares)
+  const cost = shares != null && price != null ? shares * price : null
+  // A share count sets the amount; otherwise the amount typed in the portfolio section is used.
+  const portfolio = positive(d.portfolio), holding = nonnegative(d.holding), budget = cost ?? nonnegative(d.budget)
   const urls = String(d.sources || '').split(/\n/).map(x => x.trim()).filter(Boolean)
   const asOf = new Date(d.asOf).getTime()
   const checks: Check[] = [
@@ -66,17 +72,19 @@ export function assess(d: Draft, policy: Policy, now = Date.now()): Assessment {
     { label: 'Condition for re-checking is set', ok: !!d.invalidation?.trim() },
     { label: 'Valid source links attached', ok: urls.length > 0 && urls.every(u => safeUrl(u) != null) },
   ]
-  let margin: number | null = null, rr: number | null = null, units: number | null = null, plannedRisk: number | null = null
+  let margin: number | null = null, rr: number | null = null, units: number | null = null, plannedRisk: number | null = null, sharesRisk: number | null = null
   if (d.mode === 'trade') {
     const validTrade = price != null && stop != null && target != null && stop < price && price < target
     checks.push({ label: 'Stop below entry and target above it', ok: validTrade })
     if (validTrade) rr = (target! - price!) / (price! - stop!)
+    if (validTrade && shares != null) sharesRisk = shares * (price! - stop!)
     checks.push({ label: 'Trading policy is active', ok: policy.status === 'active' })
     if (policy.status === 'active' && rr != null) checks.push({ label: 'Reward:risk meets the policy', ok: rr >= policy.rr })
     if (validTrade && policy.status === 'active' && portfolio != null && budget != null && budget <= portfolio && positive(policy.risk)) {
       const riskLimit = (portfolio * policy.risk) / 100
-      units = Math.floor(Math.min(riskLimit / (price! - stop!), budget / price!))
+      units = Math.floor(Math.min(riskLimit / (price! - stop!), shares != null ? Infinity : budget / price!))
       plannedRisk = units * (price! - stop!)
+      if (shares != null) checks.push({ label: 'Share count is within the risk-based size cap', ok: shares <= units })
     }
   } else {
     const validRange = bear != null && base != null && bull != null && bear <= base && base <= bull
@@ -85,14 +93,14 @@ export function assess(d: Draft, policy: Policy, now = Date.now()): Assessment {
     if (validRange && price != null) margin = ((bear! - price) / bear!) * 100
   }
   let exposure: number | null = null
-  const anyPortfolio = [d.portfolio, d.holding, d.budget].some(v => v !== '' && v != null)
+  const anyPortfolio = [d.portfolio, d.holding, shares != null ? '' : d.budget].some(v => v !== '' && v != null)
   const validPortfolio = portfolio != null && holding != null && budget != null && holding + budget <= portfolio
   if (anyPortfolio) checks.push({ label: 'Portfolio and budget figures are complete and consistent', ok: validPortfolio })
   if (validPortfolio) {
     exposure = ((holding! + budget!) / portfolio!) * 100
     if (policy.status === 'active' && positive(policy.maxStock)) checks.push({ label: 'Direct exposure after the action is within the policy', ok: exposure <= Number(policy.maxStock) })
   }
-  return { checks, complete: checks.every(x => x.ok), margin, rr, units, plannedRisk, exposure, sources: urls.map(safeUrl).filter((x): x is string => !!x), scope: 'manual-framework-v1' }
+  return { checks, complete: checks.every(x => x.ok), margin, rr, units, plannedRisk, exposure, shares, cost, sharesRisk, sources: urls.map(safeUrl).filter((x): x is string => !!x), scope: 'manual-framework-v1' }
 }
 
 /**
@@ -142,10 +150,14 @@ export function validPolicy(p: unknown): p is Policy {
     && (x.maxStock === '' || x.maxStock == null || (Number(x.maxStock) > 0 && Number(x.maxStock) <= 100))
 }
 
+/** Older drafts and backups may lack `shares`; callers fill it with withDefaults(). */
+export const withDefaults = (d: Draft): Draft => ({ ...blankDraft(), ...d })
+
 export function validDraft(d: unknown): d is Draft {
   const x = d as Record<string, unknown>
   return !!x && ['investment', 'trade'].includes(x.mode as string) && Object.keys(blankDraft()).every(k =>
-    k === 'isDemo' ? typeof x[k] === 'boolean'
+    (k === 'shares' && x[k] == null) ? true
+    : k === 'isDemo' ? typeof x[k] === 'boolean'
       : k === 'companyData' || k === 'quote' ? x[k] == null || (typeof x[k] === 'object' && !Array.isArray(x[k]))
         : typeof x[k] === 'string' && (x[k] as string).length <= 16000)
 }
