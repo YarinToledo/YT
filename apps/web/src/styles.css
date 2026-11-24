@@ -224,6 +224,10 @@ td.num,th.num{text-align:end}
 [dir=rtl] body{font-family:Heebo,Assistant,Arial,ui-sans-serif,system-ui,sans-serif}
 [dir=rtl] .eyebrow,[dir=rtl] .nav-label,[dir=rtl] .brand-sub{letter-spacing:0}
 
+.input-unit{display:flex;gap:6px}.input-unit input{flex:1;min-width:0}
+.unit-toggle{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.unit-toggle button{background:transparent;border:0;color:var(--muted);min-width:40px;font:inherit;font-weight:700;cursor:pointer}
+.unit-toggle button.active{background:#c9aa7022;color:var(--gold)}
 /* research */
 .research-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .research-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr);gap:16px;align-items:start}

@@ -22,6 +22,18 @@ describe('planPosition', () => {
     expect(r.rr).toBeCloseTo(3)
   })
 
+  it('sizes from a fixed dollar risk (examples from the risk-management video)', () => {
+    const base = { equity: 0, riskPct: 0, fractional: false }
+    const a = planPosition({ ...base, direction: 'LONG', entry: 20, stop: 19, target: 22, riskDollars: 30 })
+    expect(a.ok && a.quantity).toBe(30)
+    const b = planPosition({ ...base, direction: 'LONG', entry: 65, stop: 64.5, target: 66, riskDollars: 100 })
+    expect(b.ok && b.quantity).toBe(200)
+    const c = planPosition({ ...base, direction: 'SHORT', entry: 60, stop: 62, target: 56, riskDollars: 100 })
+    expect(c.ok && c.quantity).toBe(50)
+    expect(c.ok && c.rr).toBeCloseTo(2)
+    expect(planPosition({ ...base, direction: 'LONG', entry: 20, stop: 19, target: 22, riskDollars: 0 }).ok).toBe(false)
+  })
+
   it('rounds down to whole shares so risk never exceeds budget', () => {
     const r = planPosition({ ...p, fractional: false })
     expect(r.ok && r.quantity).toBe(7)

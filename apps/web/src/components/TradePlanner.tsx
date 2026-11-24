@@ -21,6 +21,16 @@ const TradePlanner = forwardRef<HTMLElement>(function TradePlanner(_, ref) {
   const [riskPct, setRiskPct] = useState(String(settings.risk_per_trade_pct))
   const [rr, setRr] = useState(String(settings.min_reward_risk))
   useEffect(() => setRiskPct(String(settings.risk_per_trade_pct)), [settings.risk_per_trade_pct])
+  // Risk as a percent of the account, or as a fixed dollar amount per trade (a "risk unit").
+  const [riskUnit, setRiskUnitState] = useState<'pct' | 'usd'>(() => { try { return localStorage.getItem('tradepilot-risk-unit') === 'usd' ? 'usd' : 'pct' } catch { return 'pct' } })
+  const [riskUsd, setRiskUsd] = useState(() => { try { return localStorage.getItem('tradepilot-risk-usd') ?? '' } catch { return '' } })
+  const setRiskUnit = (u: 'pct' | 'usd') => {
+    setRiskUnitState(u)
+    // First switch to dollars: start from what the current percent means in dollars.
+    if (u === 'usd' && !riskUsd) { const pct = parseNum(riskPct); if (pct != null && usage.equity > 0) setRiskUsd(String(Math.round((usage.equity * pct) / 100))) }
+    try { localStorage.setItem('tradepilot-risk-unit', u) } catch { /* private mode */ }
+  }
+  useEffect(() => { try { localStorage.setItem('tradepilot-risk-usd', riskUsd) } catch { /* private mode */ } }, [riskUsd])
   const [setup, setSetup] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -46,8 +56,11 @@ const TradePlanner = forwardRef<HTMLElement>(function TradePlanner(_, ref) {
     ? Math.round((entryNum + (direction === 'LONG' ? 1 : -1) * rrNum * Math.abs(entryNum - stopNum)) * 10000) / 10000
     : null
   const targetValue = autoTarget != null ? String(autoTarget) : rrNum != null ? '' : target
+  const usd = riskUnit === 'usd'
   const riskNum = parseNum(riskPct)
-  const riskOk = riskNum != null && riskNum > 0 && riskNum <= 100
+  const usdNum = parseNum(riskUsd)
+  const riskOk = usd ? usdNum != null && usdNum > 0 : riskNum != null && riskNum > 0 && riskNum <= 100
+  const defaultUsd = (usage.equity * settings.risk_per_trade_pct) / 100
 
   const result = planPosition({
     direction,
@@ -55,14 +68,15 @@ const TradePlanner = forwardRef<HTMLElement>(function TradePlanner(_, ref) {
     stop: stopNum ?? 0,
     target: parseNum(targetValue) ?? 0,
     equity: usage.equity,
-    riskPct: riskOk ? riskNum : 0,
+    riskPct: !usd && riskOk ? riskNum! : 0,
+    riskDollars: usd ? (riskOk ? usdNum! : 0) : undefined,
     fractional: settings.fractional_shares,
   })
   const sym = normalizeSymbol(symbol)
   const symOk = /^[A-Z0-9.\-]{1,12}$/.test(sym)
   const reason = openBlockReason(usage)
   const block = reason && t(reason)
-  const overDefault = riskOk && riskNum! > settings.risk_per_trade_pct + 1e-9
+  const overDefault = riskOk && (usd ? usage.equity > 0 && usdNum! > defaultUsd + 0.005 : riskNum! > settings.risk_per_trade_pct + 1e-9)
   const lowRR = result.ok && result.rr + 1e-9 < settings.min_reward_risk
 
   async function save(status: 'PLANNED' | 'OPEN') {
@@ -85,7 +99,7 @@ const TradePlanner = forwardRef<HTMLElement>(function TradePlanner(_, ref) {
   return (
     <article className="card" ref={ref}>
       <div className="card-head">
-        <div><div className="card-title">{t('Trade Planner')}</div><div className="subtle">{t('Position sizing · {p}% of {v}', { p: riskOk ? riskNum : '—', v: money(usage.equity) })}</div></div>
+        <div><div className="card-title">{t('Trade Planner')}</div><div className="subtle">{usd ? t('Position sizing · fixed risk of {r} per trade', { r: riskOk ? money(usdNum!) : '—' }) : t('Position sizing · {p}% of {v}', { p: riskOk ? riskNum! : '—', v: money(usage.equity) })}</div></div>
         <span className="subtle">{t('RISK-BASED')}</span>
       </div>
       <form className="trade-form" onSubmit={e => { e.preventDefault(); save('PLANNED') }}>
@@ -96,11 +110,23 @@ const TradePlanner = forwardRef<HTMLElement>(function TradePlanner(_, ref) {
         <div className="field"><label>{t('Entry price ($)')}</label><input type="number" inputMode="decimal" min="0" step="any" value={entry} onChange={e => setEntry(e.target.value)} /></div>
         <div className="field"><label>{t('Stop loss ($)')}</label><input type="number" inputMode="decimal" min="0" step="any" value={stop} onChange={e => setStop(e.target.value)} /></div>
         <div className="field"><label>{t('Target price ($)')}</label><input type="number" inputMode="decimal" min="0" step="any" value={targetValue} onChange={e => { setRr(''); setTarget(e.target.value) }} /></div>
-        <div className="field"><label>{t('Risk per trade (%)')}</label><input type="number" inputMode="decimal" min="0" max="100" step="any" value={riskPct} onChange={e => setRiskPct(e.target.value)} /></div>
+        <div className="field">
+          <label>{usd ? t('Risk per trade ($)') : t('Risk per trade (%)')}</label>
+          <div className="input-unit">
+            {usd
+              ? <input type="number" inputMode="decimal" min="0" step="any" value={riskUsd} onChange={e => setRiskUsd(e.target.value)} aria-label={t('Risk per trade ($)')} />
+              : <input type="number" inputMode="decimal" min="0" max="100" step="any" value={riskPct} onChange={e => setRiskPct(e.target.value)} aria-label={t('Risk per trade (%)')} />}
+            <div className="unit-toggle" role="group" aria-label={t('Risk unit')}>
+              <button type="button" aria-pressed={!usd} className={!usd ? 'active' : ''} onClick={() => setRiskUnit('pct')}>%</button>
+              <button type="button" aria-pressed={usd} className={usd ? 'active' : ''} onClick={() => setRiskUnit('usd')}>$</button>
+            </div>
+          </div>
+          <div className="hint">{usd ? (usage.equity > 0 ? t('{p}% of your account', { p: riskOk ? ((usdNum! / usage.equity) * 100).toFixed(2) : '—' }) : '') : t('Percent of account equity')}</div>
+        </div>
         <div className="field"><label>{t('Reward : risk (1:X)')}</label><input type="number" inputMode="decimal" min="0" step="any" value={rr} onChange={e => setRr(e.target.value)} placeholder={t('Manual target')} /><div className="hint">{rrNum != null ? t('Target is calculated from this ratio') : t('Empty = enter target manually')}</div></div>
 
         {!riskOk ? (
-          <div className="form-result error" aria-live="polite">{t('Risk per trade must be between 0 and 100%.')}</div>
+          <div className="form-result error" aria-live="polite">{usd ? t('Risk amount must be more than $0.') : t('Risk per trade must be between 0 and 100%.')}</div>
         ) : result.ok ? (
           <div className="form-result" aria-live="polite">
             <span>{t('Position size:')} <b>{t('{n} shares', { n: qty(result.quantity) })}</b></span>
@@ -116,7 +142,9 @@ const TradePlanner = forwardRef<HTMLElement>(function TradePlanner(_, ref) {
         {(lowRR || block || overDefault || (result.ok && result.positionValue > usage.equity) || !symOk) && (
           <div className="warnings">
             {!symOk && <div className="warning">{t('Enter a valid symbol (letters, digits, dots, dashes).')}</div>}
-            {overDefault && <div className="warning">{t('Risk {p}% is above your default {d}% for this trade.', { p: riskNum!, d: settings.risk_per_trade_pct })}</div>}
+            {overDefault && <div className="warning">{usd
+              ? t('Risk {r} is above your default {d}% ({v}) for this trade.', { r: money(usdNum!), d: settings.risk_per_trade_pct, v: money(defaultUsd) })
+              : t('Risk {p}% is above your default {d}% for this trade.', { p: riskNum!, d: settings.risk_per_trade_pct })}</div>}
             {lowRR && <div className="warning">{t('R:R is below your {m} minimum.', { m: ratio(settings.min_reward_risk) })}</div>}
             {result.ok && result.positionValue > usage.equity && <div className="warning">{t('Position value exceeds account equity — this would need margin.')}</div>}
             {block && <div className="warning block">{t('{reason}. You can still save the trade as planned.', { reason: block ?? '' })}</div>}

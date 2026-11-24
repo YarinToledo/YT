@@ -60,6 +60,8 @@ export interface PlanInput {
   target: number
   equity: number
   riskPct: number
+  /** Fixed amount to risk in dollars; when set it replaces riskPct ("risk unit" sizing). */
+  riskDollars?: number
   fractional: boolean
 }
 
@@ -74,10 +76,11 @@ export function planPosition(p: PlanInput): PlanResult {
   if (direction === 'SHORT' && stop <= entry) return { ok: false, error: 'For a SHORT, the stop must be above entry.' }
   if (direction === 'LONG' && target <= entry) return { ok: false, error: 'For a LONG, the target must be above entry.' }
   if (direction === 'SHORT' && target >= entry) return { ok: false, error: 'For a SHORT, the target must be below entry.' }
-  if (!(p.equity > 0)) return { ok: false, error: 'Account equity is zero or negative.' }
+  if (p.riskDollars == null && !(p.equity > 0)) return { ok: false, error: 'Account equity is zero or negative.' }
+  if (p.riskDollars != null && !(p.riskDollars > 0)) return { ok: false, error: 'Risk amount must be more than $0.' }
 
   const dist = Math.abs(entry - stop)
-  const riskBudget = (p.equity * p.riskPct) / 100
+  const riskBudget = p.riskDollars ?? (p.equity * p.riskPct) / 100
   const raw = riskBudget / dist
   // Always round down so the actual risk never exceeds the budget.
   const quantity = p.fractional ? Math.floor(raw * 1000) / 1000 : Math.floor(raw)
