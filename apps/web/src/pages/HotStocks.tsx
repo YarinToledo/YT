@@ -6,7 +6,6 @@ import { DEFAULT_FILTERS, evaluate, toBars, type Candidate, type ScanFilters } f
 import { useT } from '../lib/i18n'
 import { fetchRanking, fetchScan, type RankResult, type ScanRaw } from '../lib/market'
 import { useStore } from '../lib/store'
-import LiveSignals from '../components/LiveSignals'
 import MiniChart from '../components/MiniChart'
 import { detectLeverage, leverageLabel } from '../lib/leveraged'
 import type { Bar } from '../lib/indicators'
@@ -101,7 +100,6 @@ export default function HotStocks() {
 
   return (
     <div className="stack">
-      <LiveSignals />
 
       <article className="card">
         <div className="card-head">
