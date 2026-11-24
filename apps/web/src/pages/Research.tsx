@@ -204,10 +204,14 @@ function CompanySearch({ draft, onLoaded }: { draft: Draft; onLoaded: (p: Awaite
   const [hits, setHits] = useState<CompanyHit[]>([])
   const [status, setStatus] = useState<string>('US-listed companies · search by English name or symbol')
   const [busy, setBusy] = useState(false)
-  const seq = useRef(0)
+  const seq = useRef(0)        // search requests
+  const loadSeq = useRef(0)    // company loads (separate, so a search can't cancel a load)
+  const picked = useRef('')    // label written into the box after a pick; not a new search
 
   useEffect(() => {
     const query = q.trim()
+    if (q === picked.current) return
+    picked.current = ''
     if (!query) { setHits([]); setStatus('US-listed companies · search by English name or symbol'); return }
     const n = ++seq.current
     const id = window.setTimeout(() => {
@@ -222,16 +226,19 @@ function CompanySearch({ draft, onLoaded }: { draft: Draft; onLoaded: (p: Awaite
   async function choose(hit: CompanyHit) {
     const replacing = wouldReplace(draft, hit.ticker)
     if (replacing && !confirm(t('Switch to {name}? The current analysis will be replaced by a new draft for this company. Decisions in the log stay.', { name: hit.name }))) return
-    const n = ++seq.current
-    setHits([]); setBusy(true); setQ(`${hit.name} · ${hit.ticker}`)
+    seq.current++ // drop any search still in flight
+    const n = ++loadSeq.current
+    const label = `${hit.name} · ${hit.ticker}`
+    picked.current = label
+    setHits([]); setBusy(true); setQ(label)
     setStatus('Loading company details and reported data…')
     try {
       const payload = await loadCompany(hit)
-      if (n !== seq.current) return
+      if (n !== loadSeq.current) return
       onLoaded(payload, replacing)
       setStatus('Company details and available data were filled in. Each figure shows its period and source.')
     } catch (e) {
-      if (n === seq.current) setStatus((e as Error).message)
+      if (n === loadSeq.current) setStatus((e as Error).message)
     } finally { setBusy(false) }
   }
 
