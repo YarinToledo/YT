@@ -228,6 +228,19 @@ td.num,th.num{text-align:end}
 .unit-toggle{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
 .unit-toggle button{background:transparent;border:0;color:var(--muted);min-width:40px;font:inherit;font-weight:700;cursor:pointer}
 .unit-toggle button.active{background:#c9aa7022;color:var(--gold)}
+.expectancy-scroll{margin-top:14px}
+table.expectancy th,table.expectancy td{padding:9px 12px;text-align:center}
+table.expectancy th[scope=row]{text-align:start;color:var(--muted)}
+table.expectancy td.pos{background:#55c69a1a;color:var(--green)}
+table.expectancy td.neg{background:#e0606014;color:var(--red)}
+table.expectancy td.zero{color:var(--muted)}
+table.expectancy td{direction:ltr;unicode-bidi:isolate}
+table.expectancy td.zone{box-shadow:inset 0 0 0 1px #c9aa7066;font-weight:700}
+table.expectancy td.mine{outline:2px solid var(--gold);outline-offset:-2px;background:#c9aa7033;color:var(--text)}
+.expectancy-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:11px}
+.expectancy-legend .sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px}
+.expectancy-legend .sw.zone{box-shadow:inset 0 0 0 1px #c9aa70aa}.expectancy-legend .sw.mine{background:#c9aa7066;outline:2px solid var(--gold);outline-offset:-2px}
+.expectancy-summary{margin-top:12px;display:grid;gap:4px}.expectancy-summary p{margin:0}
 /* research */
 .research-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .research-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr);gap:16px;align-items:start}

@@ -1,4 +1,5 @@
 import EquityChart from '../components/EquityChart'
+import ExpectancyCard from '../components/ExpectancyCard'
 import { useT } from '../lib/i18n'
 import { tradeStats, type TradeStats } from '../lib/calc'
 import { money, pct, rMult, signedMoney, tone } from '../lib/format'
@@ -64,6 +65,7 @@ export default function Analytics() {
         ))}
       </section>
       <EquityChart days={90} />
+      <ExpectancyCard />
       <section className="grid two-col">
         <Breakdown title={t('By symbol')} col={t('Symbol')} groups={groupBy(trades, x => x.symbol)} />
         <Breakdown title={t('By setup')} col={t('Setup')} groups={groupBy(trades, x => x.setup ?? 'Untagged')} />
