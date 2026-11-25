@@ -24,6 +24,24 @@ export const supabase: SupabaseClient | null = isDemo ? null : createClient(url!
 // ---------------------------------------------------------------------------
 const num = (v: unknown) => (v == null ? null : Number(v))
 
+/**
+ * best_price / eod_price come from migration 20261125000000_trade_excursion.sql. Until it is applied the
+ * columns don't exist, so retry without them when they are empty and explain when they aren't.
+ */
+async function withExcursionFallback(
+  row: Partial<TradeInput>,
+  send: (row: Partial<TradeInput>) => PromiseLike<{ data: unknown; error: { message: string } | null }>,
+): Promise<Record<string, unknown>> {
+  const first = await send(row)
+  if (!first.error) return first.data as Record<string, unknown>
+  if (!/best_price|eod_price/.test(first.error.message)) throw new Error(first.error.message)
+  if (row.best_price != null || row.eod_price != null) throw new Error('Run the trade_excursion migration in Supabase to save the best and end-of-day prices.')
+  const { best_price: _b, eod_price: _e, ...rest } = row
+  const second = await send(rest)
+  if (second.error) throw new Error(second.error.message)
+  return second.data as Record<string, unknown>
+}
+
 function toTrade(r: Record<string, unknown>): Trade {
   return {
     id: r.id as string,
@@ -36,6 +54,8 @@ function toTrade(r: Record<string, unknown>): Trade {
     take_profit: num(r.take_profit),
     quantity: Number(r.quantity),
     exit_price: num(r.exit_price),
+    best_price: num(r.best_price),
+    eod_price: num(r.eod_price),
     fees: Number(r.fees ?? 0),
     opened_at: (r.opened_at as string) ?? null,
     closed_at: (r.closed_at as string) ?? null,
@@ -80,10 +100,10 @@ function supabaseApi(sb: SupabaseClient): DataApi {
       return check(await sb.from('trades').select('*').order('created_at', { ascending: false })).map(toTrade)
     },
     async createTrade(t) {
-      return toTrade(check(await sb.from('trades').insert(t).select().single()))
+      return toTrade(await withExcursionFallback(t, row => sb.from('trades').insert(row).select().single()))
     },
     async updateTrade(id, patch) {
-      return toTrade(check(await sb.from('trades').update(patch).eq('id', id).select().single()))
+      return toTrade(await withExcursionFallback(patch, row => sb.from('trades').update(row).eq('id', id).select().single()))
     },
     async deleteTrade(id) {
       const { error } = await sb.from('trades').delete().eq('id', id)
@@ -120,6 +140,9 @@ function demoSeed(): DemoState {
     id, symbol, company, direction, status: 'CLOSED', entry_price: entry, stop_loss: stop, take_profit: target,
     quantity: qty, exit_price: exit, fees: 0, opened_at: daysAgo(day + 1, 16), closed_at: daysAgo(day, 19),
     setup, notes: null, created_at: daysAgo(day + 2),
+    // Sample excursion: winners ran past the exit, the stop-out went a little way first.
+    best_price: exit === stop ? entry + (direction === 'LONG' ? 1 : -1) * Math.abs(entry - stop) * 0.4 : exit + (direction === 'LONG' ? 1 : -1) * Math.abs(entry - stop) * 0.6,
+    eod_price: exit,
   })
   return {
     settings: { ...DEFAULT_SETTINGS },

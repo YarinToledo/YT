@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useT } from '../lib/i18n'
 import { useStore } from '../lib/store'
 import type { Trade, TradeStatus } from '../lib/types'
-import { rMultiple, tradePnl } from '../lib/calc'
+import { rAt, rMultiple, targetR, tradePnl } from '../lib/calc'
+import { useTargetR } from '../lib/targetR'
 import { px, qty, rMult, shortDate, signedMoney, tone } from '../lib/format'
 import { useTradeDialog } from '../components/TradeDialog'
 import { downloadTradesCsv } from './Settings'
@@ -15,6 +16,7 @@ export default function Journal() {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('ALL')
   const [q, setQ] = useState('')
   const [dialog, openDialog] = useTradeDialog()
+  const [target, setTarget] = useTargetR()
 
   const rows = trades
     .filter(t => filter === 'ALL' || t.status === filter)
@@ -40,6 +42,9 @@ export default function Journal() {
         </div>
         <div className="btn-row">
           <input className="search" placeholder={tr('Search symbol or setup')} value={q} onChange={e => setQ(e.target.value)} />
+          <label className="target-select" title={tr('Target R: the target if the best price reached it, otherwise the end-of-day result')}>{tr('Target')}
+            <select value={target} onChange={e => setTarget(Number(e.target.value))}>{[1, 1.5, 2, 2.5, 3, 4].map(x => <option key={x} value={x}>{x}R</option>)}</select>
+          </label>
           <button className="btn secondary" onClick={() => downloadTradesCsv(trades)}>{tr('Export CSV')}</button>
         </div>
       </div>
@@ -50,7 +55,7 @@ export default function Journal() {
           <table>
             <thead><tr>
               <th>{tr('Date')}</th><th>{tr('Instrument')}</th><th>{tr('Dir')}</th><th>{tr('Setup')}</th><th className="num">{tr('Entry')}</th><th className="num">{tr('Exit')}</th>
-              <th className="num">{tr('Qty')}</th><th className="num">{tr('P&L')}</th><th className="num">R</th><th>{tr('Status')}</th><th>{tr('Notes')}</th><th className="num">{tr('Actions')}</th>
+              <th className="num">{tr('Qty')}</th><th className="num">{tr('P&L')}</th><th className="num">R</th><th className="num" title={tr('How far the trade went in your favor')}>Max R</th><th className="num" title={tr('Where it stood at the end of the day')}>EOD R</th><th className="num" title={tr('Target R: the target if the best price reached it, otherwise the end-of-day result')}>{tr('Target R')} ({target})</th><th>{tr('Status')}</th><th>{tr('Notes')}</th><th className="num">{tr('Actions')}</th>
             </tr></thead>
             <tbody>
               {rows.map(t => {
@@ -66,6 +71,9 @@ export default function Journal() {
                     <td className="num">{qty(t.quantity)}</td>
                     <td className={`num ${tone(p)}`}>{t.status === 'CLOSED' ? signedMoney(p) : '—'}</td>
                     <td className={`num ${tone(p)}`}>{rMult(rMultiple(t))}</td>
+                    <td className="num">{rMult(rAt(t, t.best_price))}</td>
+                    <td className="num">{rMult(rAt(t, t.eod_price))}</td>
+                    {(() => { const x = targetR(t, target); return <td className={`num ${tone(x ?? 0)}`}>{rMult(x)}</td> })()}
                     <td><span className={`pill ${t.status}`}>{tr(t.status)}</span></td>
                     <td title={t.notes ?? ''} style={{ maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.notes ?? '—'}</td>
                     <td>

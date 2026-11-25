@@ -20,6 +20,12 @@ export function validateTrade(t: TradeInput): string | null {
     if (!t.closed_at || !t.opened_at) return 'A closed trade needs open and close times.'
     if (new Date(t.closed_at) < new Date(t.opened_at)) return 'Close time is before open time.'
   }
+  if (t.best_price != null) {
+    if (!(t.best_price > 0)) return 'Best price must be positive.'
+    if (t.direction === 'LONG' && t.best_price < t.entry_price) return 'For a LONG, the best price reached is at or above entry.'
+    if (t.direction === 'SHORT' && t.best_price > t.entry_price) return 'For a SHORT, the best price reached is at or below entry.'
+  }
+  if (t.eod_price != null && !(t.eod_price > 0)) return 'End-of-day price must be positive.'
   return null
 }
 

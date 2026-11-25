@@ -20,6 +20,25 @@ export function rMultiple(t: Trade): number | null {
   return tradePnl(t) / risk
 }
 
+/** R reached at `price` (before fees), e.g. the best price or the end-of-day price. */
+export function rAt(t: Pick<Trade, 'direction' | 'entry_price' | 'stop_loss'>, price: number | null | undefined): number | null {
+  const dist = Math.abs(t.entry_price - t.stop_loss)
+  if (price == null || dist <= 0) return null
+  return (sign(t.direction) * (price - t.entry_price)) / dist
+}
+
+/**
+ * Theoretical result with a fixed target, as in the trade-journal lesson: the target if the best price reached it,
+ * otherwise where the trade stood at the end of the day (the stop if stopped out). Falls back to the exit price.
+ */
+export function targetR(t: Trade, target: number): number | null {
+  if (t.status !== 'CLOSED') return null
+  const max = rAt(t, t.best_price)
+  if (max == null) return null
+  if (max >= target - 1e-9) return target
+  return rAt(t, t.eod_price ?? t.exit_price)
+}
+
 /** Planned reward:risk ratio from entry/stop/target. */
 export function plannedRR(t: Pick<Trade, 'direction' | 'entry_price' | 'stop_loss' | 'take_profit'>): number | null {
   if (t.take_profit == null) return null

@@ -30,6 +30,8 @@ function Dialog({ trade, mode, onClose }: { trade: Trade; mode: DialogMode; onCl
     target: trade.take_profit == null ? '' : String(trade.take_profit),
     quantity: String(trade.quantity),
     exit: trade.exit_price == null ? '' : String(trade.exit_price),
+    best: trade.best_price == null ? '' : String(trade.best_price),
+    eod: trade.eod_price == null ? '' : String(trade.eod_price),
     fees: String(trade.fees ?? 0),
     opened: mode === 'open' ? now : toInput(trade.opened_at),
     closed: mode === 'close' ? now : toInput(trade.closed_at),
@@ -52,6 +54,8 @@ function Dialog({ trade, mode, onClose }: { trade: Trade; mode: DialogMode; onCl
     take_profit: parseNum(f.target),
     quantity: parseNum(f.quantity) ?? NaN,
     exit_price: status === 'CLOSED' ? parseNum(f.exit) : null,
+    best_price: status === 'CLOSED' ? parseNum(f.best) : trade.best_price ?? null,
+    eod_price: status === 'CLOSED' ? parseNum(f.eod) : trade.eod_price ?? null,
     fees: parseNum(f.fees) ?? 0,
     // If the user kept the prefilled "now", store the precise timestamp instead of the minute-rounded one.
     opened_at: status === 'OPEN' || status === 'CLOSED' ? (mode === 'open' && f.opened === now ? new Date().toISOString() : f.opened === toInput(trade.opened_at) ? trade.opened_at : fromInput(f.opened)) : null,
@@ -94,6 +98,8 @@ function Dialog({ trade, mode, onClose }: { trade: Trade; mode: DialogMode; onCl
           <div className="field"><label>{t('Exit price ($)')}</label><input type="number" inputMode="decimal" step="any" value={f.exit} onChange={set('exit')} autoFocus={mode === 'close'} /></div>
           <div className="field"><label>{t('Closed at')}</label><input type="datetime-local" value={f.closed} onChange={set('closed')} /></div>
           <div className="field"><label>{t('Fees ($)')}</label><input type="number" inputMode="decimal" step="any" min="0" value={f.fees} onChange={set('fees')} /></div>
+          <div className="field"><label>{t(f.direction === 'SHORT' ? 'Lowest price reached ($)' : 'Highest price reached ($)')}</label><input type="number" inputMode="decimal" step="any" min="0" value={f.best} onChange={set('best')} placeholder={t('Optional')} /><div className="hint">{t('Best point after entry, even if you were later stopped out')}</div></div>
+          <div className="field"><label>{t('End-of-day price ($)')}</label><input type="number" inputMode="decimal" step="any" min="0" value={f.eod} onChange={set('eod')} placeholder={t('Optional')} /><div className="hint">{t('If you were stopped out, enter the stop price')}</div></div>
         </>}
         {mode === 'edit' && <div className="field"><label>{t('Setup')}</label><input value={f.setup} onChange={set('setup')} placeholder={t('Breakout, pullback…')} /></div>}
         <div className="field full"><label>{t('Notes')}</label><textarea value={f.notes} onChange={set('notes')} placeholder={mode === 'close' ? t('What went right or wrong?') : ''} /></div>

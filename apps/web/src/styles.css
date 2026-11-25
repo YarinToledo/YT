@@ -241,6 +241,15 @@ table.expectancy td.mine{outline:2px solid var(--gold);outline-offset:-2px;backg
 .expectancy-legend .sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px}
 .expectancy-legend .sw.zone{box-shadow:inset 0 0 0 1px #c9aa70aa}.expectancy-legend .sw.mine{background:#c9aa7066;outline:2px solid var(--gold);outline-offset:-2px}
 .expectancy-summary{margin-top:12px;display:grid;gap:4px}.expectancy-summary p{margin:0}
+.target-select{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px}
+.target-select select{width:auto}
+.total-row td{border-top:2px solid var(--line);font-weight:700}
+.reach{padding:0 20px 18px}
+.reach-bars{display:grid;gap:6px;max-width:460px}
+.reach-bar{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:10px;font-size:12px}
+.reach-bar span{color:var(--muted)}.reach-bar b{text-align:end}
+.reach-bar .bar{height:8px;border-radius:6px;background:#1b2632;overflow:hidden}
+.reach-bar .bar i{display:block;height:100%;background:var(--gold)}
 /* research */
 .research-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .research-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr);gap:16px;align-items:start}

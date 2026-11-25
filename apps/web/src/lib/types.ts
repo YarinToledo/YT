@@ -22,6 +22,10 @@ export interface Trade {
   take_profit: number | null
   quantity: number
   exit_price: number | null
+  /** Best price reached after entry before any stop-out (highest for LONG, lowest for SHORT). Optional. */
+  best_price?: number | null
+  /** End-of-day price while still in the trade; the stop price if stopped out. Optional. */
+  eod_price?: number | null
   fees: number
   opened_at: string | null
   closed_at: string | null

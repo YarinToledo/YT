@@ -6,7 +6,7 @@ import type { Trade } from '../lib/types'
 import { SettingsFields } from './Risk'
 
 export function downloadTradesCsv(trades: Trade[]) {
-  const cols = ['symbol', 'company', 'direction', 'status', 'entry_price', 'stop_loss', 'take_profit', 'quantity', 'exit_price', 'fees', 'pnl', 'opened_at', 'closed_at', 'setup', 'notes', 'created_at'] as const
+  const cols = ['symbol', 'company', 'direction', 'status', 'entry_price', 'stop_loss', 'take_profit', 'quantity', 'exit_price', 'best_price', 'eod_price', 'fees', 'pnl', 'opened_at', 'closed_at', 'setup', 'notes', 'created_at'] as const
   const esc = (v: unknown) => {
     if (v == null) return ''
     let s = String(v)
