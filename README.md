@@ -73,3 +73,37 @@ Hot Stocks page. Setup: `worker/ibkr/README.md`.
 
 Import the repo in Vercel, set **Root Directory** to `apps/web`, framework preset Vite, and add the
 `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` environment variables. `vercel.json` handles SPA routing.
+
+## Six-specialist research desk
+
+Open **Research Desk** (`/agents`) for six explicit workflows: the existing momentum screener,
+daily/weekly technical analysis, the existing on-demand AI/news review, strategy backtesting,
+portfolio stress, and a review of the last 20 dated closed trades. `tool` and `s` URL parameters
+retain the selected workflow and symbol. Hebrew/English, RTL, keyboard navigation and narrow screens
+are supported. AI requests still require an explicit button press.
+
+The desk reuses the existing `market-data` function and account store. No new secrets, database
+migrations, model service, or backend deployment are required. Existing FMP/Anthropic/Supabase
+configuration is still needed for market data and AI; the demo displays that limitation honestly.
+Portfolio and journal tools operate on whatever account is currently loaded, including labelled demo data.
+
+`apps/web/src/lib/desk.ts` contains the auditable calculations:
+
+- Weekly candles aggregate provider OHLCV; the current New York calendar week is excluded conservatively,
+  even after Friday's close. At least 30 prior weekly candles are required for the weekly indicator card;
+  indicators with longer warmups remain blank.
+- Backtesting supports a configurable SMA crossover and a prior-high breakout. Signals use the previous
+  bar and fill at the next open. One long position, cash-capped sizing, both-sided fees/slippage, gap-stop
+  fills at the open, stop-first treatment of ambiguous OHLC bars, and final sample liquidation are explicit.
+  The current New York market date is excluded. Selected sample dates include the indicator warmup;
+  result dates start after warmup. Buy-and-hold uses matching test dates and costs with fractional shares.
+  Drawdown is end-of-day mark-to-market, not intraday drawdown. Results are in-sample; provider corporate-action
+  adjustments are not independently verified. No automatic parameter optimization or claims of an edge.
+- The 20% portfolio shock uses recorded entry costs and realized equity; it is not live valuation,
+  a correlation estimate, or a maximum-loss guarantee. It assumes no stop execution or rebalancing.
+- Journal observations count missing setup labels/targets, planned ratios below the current minimum,
+  and net losses beyond 1.05R. These do not establish emotional behavior or historical rule violations.
+  Incomplete outcome records are excluded and counted. Nothing modifies existing trades.
+
+Validation: `cd apps/web && npm test && npm run build`. Domain tests cover signal timing, future-data
+independence, ambiguous candles, gap losses, cost/cash limits, weekly boundaries, stress netting and journal selection.
