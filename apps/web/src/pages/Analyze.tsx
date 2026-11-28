@@ -8,6 +8,7 @@ import { longScenario, sma, technicals, type Bar, type Bias, type Technicals } f
 import { compact, qty, money, num2, pct, signedPct, ratio, shortDate, tone } from '../lib/format'
 import { normalizeSymbol } from '../lib/validate'
 import AiAnalystCard from '../components/AiAnalystCard'
+import { weeklyBars } from '../lib/desk'
 
 const SYMBOL_RE = /^[A-Z0-9.\-]{1,12}$/
 
@@ -149,7 +150,7 @@ function FundamentalCard({ data, t }: { data: MarketData; t: T }) {
   )
 }
 
-export default function Analyze() {
+export default function Analyze({ focus = 'all' }: { focus?: 'all' | 'technical' | 'news' }) {
   const t = useT()
   const { watchlist, addWatch, settings, usage } = useStore()
   const [params, setParams] = useSearchParams()
@@ -175,11 +176,16 @@ export default function Analyze() {
   function submit(e: React.FormEvent) {
     e.preventDefault()
     const s = normalizeSymbol(input)
-    if (SYMBOL_RE.test(s)) setParams({ s })
+    if (SYMBOL_RE.test(s)) setParams(p => { p.set('s', s); return p })
   }
 
   const data = state.data
   const tech = useMemo(() => (data ? technicals(data.bars) : null), [data])
+  const weekly = useMemo(() => {
+    try { return data ? weeklyBars(data.bars) : [] } catch { return [] }
+  }, [data])
+  const weekTech = useMemo(() => technicals(weekly), [weekly])
+  function selectSymbol(s: string) { setParams(p => { p.set('s', s); return p }) }
   const scenario = tech ? longScenario(tech, settings.min_reward_risk > 0 ? settings.min_reward_risk : 2) : null
   const sized = scenario ? planPosition({ direction: 'LONG', entry: scenario.entry, stop: scenario.stop, target: scenario.target, equity: usage.equity, riskPct: settings.risk_per_trade_pct, fractional: settings.fractional_shares }) : null
   const p = data?.profile
@@ -190,6 +196,8 @@ export default function Analyze() {
     const r = (n: number | null | undefined, d = 2) => (n == null || !isFinite(n) ? null : Math.round(n * 10 ** d) / 10 ** d)
     const lastBars = data.bars.slice(-30).map(b => ({ d: b.date, c: r(b.close), v: Math.round(b.volume) }))
     return {
+      dataQuality: { source: 'Financial Modeling Prep', fetchedAt: data.fetchedAt, latestDailyBar: data.bars[data.bars.length - 1]?.date ?? null,
+        staleCache: data.cache?.stale ?? false, unavailable: Object.keys(data.errors) },
       profile: data.profile && { ...data.profile, description: data.profile.description?.slice(0, 1500) ?? null, image: undefined },
       technicals: tech && {
         price: r(tech.price), sma20: r(tech.sma20), sma50: r(tech.sma50), sma200: r(tech.sma200), rsi14: r(tech.rsi, 1),
@@ -220,7 +228,7 @@ export default function Analyze() {
           <button className="btn" disabled={state.loading || !SYMBOL_RE.test(normalizeSymbol(input))}>{state.loading ? t('Analyzing…') : t('Analyze')}</button>
         </form>
         {watchlist.length > 0 && (
-          <div className="chips">{watchlist.map(w => <button key={w.symbol} type="button" className="chip" onClick={() => setParams({ s: w.symbol })}>{w.symbol}</button>)}</div>
+          <div className="chips">{watchlist.map(w => <button key={w.symbol} type="button" className="chip" onClick={() => selectSymbol(w.symbol)}>{w.symbol}</button>)}</div>
         )}
         <div className="subtle" style={{ marginTop: 12 }}>{t('Technical and fundamental data from Financial Modeling Prep. This is automated analysis for learning and planning, not investment advice.')}</div>
       </article>
@@ -259,14 +267,26 @@ export default function Analyze() {
             {data.bars.length > 1 ? <div style={{ marginTop: 16 }}><PriceChart bars={data.bars} /></div> : <div className="empty">{t('No price history available.')}</div>}
           </article>
 
-          <AiAnalystCard symbol={data.symbol} context={aiContext} onAnalyze={s => setParams({ s })} />
+          {focus !== 'technical' && <AiAnalystCard key={data.symbol} symbol={data.symbol} context={aiContext} onAnalyze={selectSymbol} />}
 
-          <section className="grid two-col">
+          {focus !== 'news' && <section className="grid two-col">
             {tech ? <TechnicalCard tech={tech} t={t} /> : <article className="card"><div className="card-title">{t('Technical analysis')}</div><div className="empty">{t('Not enough price history for technical analysis.')}</div></article>}
             <FundamentalCard data={data} t={t} />
-          </section>
+          </section>}
 
-          {scenario && tech && (
+          {focus !== 'news' && <article className="card">
+            <div className="card-head"><div><div className="card-title">{t('Weekly technical analysis')}</div><p className="subtle">{t('Completed prior weeks only; the current week is excluded.')} {weekly.length > 0 && t('Last included session: {d}', { d: weekly[weekly.length - 1].date })}</p></div></div>
+            {weekTech ? <dl className="kv">
+              <dt>{t('20-week average')}</dt><dd>{money(weekTech.sma20)}</dd>
+              <dt>{t('50-week average')}</dt><dd>{money(weekTech.sma50)}</dd>
+              <dt>RSI (14)</dt><dd>{num2(weekTech.rsi, 1)}</dd>
+              <dt>MACD (12/26/9)</dt><dd>{weekTech.macd ? `${num2(weekTech.macd.macd)} / ${num2(weekTech.macd.signal)}` : '—'}</dd>
+              <dt>{t('Nearest support')}</dt><dd>{money(weekTech.support)}</dd>
+              <dt>{t('Nearest resistance')}</dt><dd>{money(weekTech.resistance)}</dd>
+            </dl> : <p className="empty">{t('At least 30 completed weekly bars are needed; unavailable indicators are left blank.')}</p>}
+          </article>}
+
+          {focus !== 'news' && scenario && tech && (
             <article className="card">
               <div className="card-head">
                 <div><div className="card-title">{t('Trade scenario (long)')}</div><div className="subtle">{t('Stop under nearest support (or 2×ATR) · target at your {rr} ratio · risk {p}% of equity', { rr: ratio(scenario.rr), p: settings.risk_per_trade_pct })}</div></div>
@@ -313,7 +333,7 @@ export default function Analyze() {
                           <td><span className="ticker">{peer.symbol}</span>{peer.name && <span className="company">{peer.name}</span>}</td>
                           <td className="num">{money(peer.price)}</td>
                           <td className="num">{compact(peer.marketCap)}</td>
-                          <td><div className="row-actions"><button className="btn sm secondary" onClick={() => setParams({ s: peer.symbol })}>{t('Analyze')}</button></div></td>
+                          <td><div className="row-actions"><button className="btn sm secondary" onClick={() => selectSymbol(peer.symbol)}>{t('Analyze')}</button></div></td>
                         </tr>
                       ))}
                     </tbody>

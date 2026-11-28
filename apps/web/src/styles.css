@@ -3,6 +3,34 @@
   --text:#edf1f5;--muted:#8794a2;--gold:#c9aa70;--green:#55c69a;
   --red:#e27676;--blue:#7ba7d8;--amber:#e0b25a;--radius:15px;
 }
+
+/* Specialist desk: readable task controls, scoped to preserve the established terminal. */
+.desk{font-size:1rem;line-height:1.6}
+.desk .subtle,.desk .warning,.desk .hint{font-size:.875rem}
+.desk .card-title{font-size:1rem}
+.desk .kv,.desk .signals,.desk .risk-row{font-size:.875rem}
+.desk .btn{font-size:.875rem;min-height:40px}
+.desk-intro h2{font-size:clamp(1.5rem,3vw,2.2rem);line-height:1.2;letter-spacing:-.04em;margin:12px 0}
+.desk-intro p{max-width:75ch}
+.desk-specialists{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:24px}
+.desk-specialist{display:flex;flex-direction:column;align-items:stretch;gap:6px;text-align:start;border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--panel);color:var(--text);min-width:0;transition:border-color .15s,background .15s}
+.desk-specialist:hover{border-color:var(--gold);background:var(--panel2)}
+.desk-specialist:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.desk-specialist.selected{border-color:var(--gold);background:linear-gradient(135deg,#c9aa701a,#141e29);box-shadow:inset 0 2px 0 var(--gold)}
+.desk-specialist b{font-size:1rem}.desk-specialist>span:last-child{color:var(--muted);font-size:.875rem}
+.desk-specialist-top{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--gold);margin-bottom:7px}
+.desk-specialist-top small{font-size:.875rem;color:var(--muted)}
+.desk-context{padding:0 4px;color:var(--muted);margin:0}
+.desk-symbol{display:flex;flex:1;flex-direction:column;gap:6px;min-width:0;font-size:.875rem}
+.desk .analyze-form{align-items:end}.desk .analyze-form input{font-size:1rem}
+.desk .desk-form{grid-template-columns:repeat(3,minmax(0,1fr));margin:24px 0 16px}
+.desk-form .field label{font-size:.875rem}.desk-form input,.desk-form select{font-size:1rem;min-width:0;width:100%}
+.desk-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}
+.desk-metric{display:flex;flex-direction:column;gap:5px;padding:14px;background:#0c1219;border:1px solid var(--line);border-radius:10px;min-width:0}
+.desk-metric span{font-size:.875rem;color:var(--muted)}.desk-metric b{font-size:1.4rem;text-align:start;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.desk caption{text-align:start;padding:12px 0;color:var(--muted);font-size:.875rem}.desk th,.desk td{font-size:.875rem}
+@media(max-width:1050px){.desk-specialists{grid-template-columns:repeat(2,minmax(0,1fr))}.desk .desk-form{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.desk-specialists{gap:8px}.desk-specialist{padding:12px}.desk-specialist-top{flex-direction:column;align-items:start;gap:6px}.desk-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.desk .desk-form{grid-template-columns:1fr}.desk .card{padding:16px}.desk .analyze-form{flex-wrap:wrap}.desk .analyze-form .btn{width:100%}}
 *{box-sizing:border-box}
 html,body{background:var(--bg)}
 body{margin:0;color:var(--text);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}

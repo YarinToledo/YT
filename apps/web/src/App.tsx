@@ -15,6 +15,7 @@ import Login from './pages/Login'
 import Analyze from './pages/Analyze'
 import HotStocks from './pages/HotStocks'
 import Research from './pages/Research'
+import Agents from './pages/Agents'
 import { useT } from './lib/i18n'
 
 function Shell({ email }: { email: string | null }) {
@@ -29,6 +30,7 @@ function Shell({ email }: { email: string | null }) {
           <Route path="analyze" element={<Analyze />} />
           <Route path="hot" element={<HotStocks />} />
           <Route path="research" element={<Research />} />
+          <Route path="agents" element={<Agents />} />
           <Route path="risk" element={<Risk />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="settings" element={<Settings email={email} />} />

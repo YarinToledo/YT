@@ -10,6 +10,7 @@ export const PAGES = [
   { path: '/positions', label: 'Open Positions', title: 'Open Positions', ico: 'positions', group: 'WORKSPACE' },
   { path: '/journal', label: 'Trade Journal', title: 'Trade Journal', ico: 'journal', group: 'WORKSPACE' },
   { path: '/watch', label: 'Market Watch', title: 'Market Watch', ico: 'watch', group: 'WORKSPACE' },
+  { path: '/agents', label: 'Research Desk', title: 'Six-specialist Research Desk', ico: 'research', group: 'WORKSPACE' },
   { path: '/hot', label: 'Hot Stocks', title: 'Hot Stocks', ico: 'hot', group: 'WORKSPACE' },
   { path: '/analyze', label: 'Stock Analysis', title: 'Stock Analysis', ico: 'analyze', group: 'WORKSPACE' },
   { path: '/research', label: 'Research', title: 'Company Research', ico: 'research', group: 'WORKSPACE' },
